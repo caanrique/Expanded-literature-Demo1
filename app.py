@@ -243,9 +243,10 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, tokenizer, modelo):
         contexto_unido = "\n".join([f"[Fragment {i+1}]: {c}" for i, c in enumerate(contexto)])
         
         # Formato correcto para Phi-3-mini
+        # Aseguramos que sea una lista de diccionarios puros
         messages = [
-            {"role": "system", "content": prompt_sistema},
-            {"role": "user", "content": f"Context from story:\n{contexto_unido}\n\nQuestion: {pregunta}"}
+            {"role": "system", "content": str(prompt_sistema)},
+            {"role": "user", "content": str(f"Context from story:\n{contexto_unido}\n\nQuestion: {pregunta}")}
         ]
         
         # Aplica el template de chat correctamente
