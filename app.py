@@ -98,16 +98,26 @@ def buscar_fragmentos(pregunta, cuento_key, todos_chunks, todos_embeddings, embe
     return fragmentos if fragmentos else [chunks[0]]
 
 def generar_respuesta_llm(contexto, pregunta, personaje_key, tokenizer, modelo):
+    """Genera respuesta usando el chat template correcto"""
     prompt_sistema = PROMPTS_PERSONAJES[personaje_key]["descripcion"]
-    contexto_unido = "\n".join([f"[Fragment {i+1}]: {c}" for i, c in enumerate(contexto)])
+    contexto_unido = "\n".join([f"[Fragmento {i+1}]: {c}" for i, c in enumerate(contexto)])
     
+    # Formato correcto para Qwen2.5
     messages = [
         {"role": "system", "content": prompt_sistema},
-        {"role": "user", "content": f"Context from story:\n{contexto_unido}\n\nQuestion: {pregunta}"}
+        {"role": "user", "content": f"Contexto del cuento:\n{contexto_unido}\n\nPregunta: {pregunta}"}
     ]
     
-    text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=2048).to(modelo.device)
+    # Aplica el template de chat correctamente
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+    
+    # Tokeniza y genera
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=2048)
+    inputs = {k: v.to(modelo.device) for k, v in inputs.items()}
     
     with torch.no_grad():
         outputs = modelo.generate(
@@ -116,11 +126,16 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, tokenizer, modelo):
             temperature=0.85,
             do_sample=True,
             repetition_penalty=1.18,
-            pad_token_id=tokenizer.eos_token_id
+            pad_token_id=tokenizer.eos_token_id,
+            eos_token_id=tokenizer.eos_token_id
         )
     
-    respuesta = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
-    return respuesta.strip()
+    # Decodifica la respuesta
+    response_text = tokenizer.decode(
+        outputs[0][inputs['input_ids'].shape[1]:], 
+        skip_special_tokens=True
+    )
+    return response_text.strip()
 
 def inicializar_sistema():
     os.makedirs(CACHE_DIR, exist_ok=True)
@@ -147,14 +162,18 @@ def chat_con_personaje(personaje_key, user_input, history):
     if not user_input.strip():
         return history
     
+    # Aseguramos que personaje_key sea string
+    if isinstance(personaje_key, tuple):
+        personaje_key = personaje_key[1]  # Extrae el key del dropdown
+    
     if todos_chunks is None:
         return history + [("System Error", "Model not loaded")]
     
     fragmentos = buscar_fragmentos(user_input, personaje_key, todos_chunks, todos_embeddings, embedder)
     respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, tokenizer, modelo)
     
-    history = history + [(user_input, respuesta)]
-    return history
+    new_history = history + [(user_input, respuesta)]
+    return new_history
 
 with gr.Blocks(title="📚 Expanded Literature") as demo:
     gr.Markdown("# 📚 Expanded Literature v1.0")
