@@ -5,7 +5,7 @@ from sentence_transformers import SentenceTransformer, util
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import gradio as gr
 
-# Datos de los cuentos (completos)
+# Datos de los cuentos (más compactos para evitar problemas de memoria)
 CUENTOS = {
     "corazon_delator": {
         "titulo": "The Tell-Tale Heart",
@@ -35,7 +35,7 @@ Cuando el viejo estuvo muerto, me tranquilicé. El latido había cesado. No hab�
 
 Era ya de día cuando terminé. El cuerpo estaba despedazado. No había rastro de sangre. Todo estaba limpio. Llevé los restos a través de la casa y los escondí debajo de las tablas del suelo. Puse todo tan bien que nada era visible. Me lavé las manos. Me senté y me tomé un café. Me sentía tranquilo.
 
-A las cuatro de la mañana sonó un golpe en la puerta. Era la policía. Un vecino había oído un grito y había llamado a la policía. Los tres agentes entraron en la casa. Les dije que el grito lo había dado yo en un sueño. Les dije que el viejo se había ido a visitar a unos amigos en el campo. Les invité a registrar la casa. Les acompañé por todas partes. Les mostré el tesoro del viejo, intacto. Mi seguridad les convenció. Les invité a sentarse y descansar. Les llevé sillas a la misma habitación donde yacía el cadáver del viejo.
+A las cuatro de la mañana sonó un golpe en la puerta. Era la policía. Un vecino había oído un grito y había llamado a la policía. Los tres agentes entraron en la casa. Les dije que el grito lo había dado yo en un sueño. Les dije que el viejo se había ido a visitar a unos amigos en el campo. Les invité a registrar la casa. Les acompañé por todas partes. Les mostré el tesoro del viejo, intacto. Mi seguridad les convenció. Les invité a sentarme y descansar. Les llevé sillas a la misma habitación donde yacía el cadáver del viejo.
 
 Estaba yo muy seguro de mí mismo. Les hablé con libertad, con audacia, con jovialidad. Mi seguridad crecía a cada momento. Sentía una especie de éxtasis. Estaba triunfante. Había engañado a la policía. Había eliminado al viejo. Su horrible ojo ya no me miraría nunca más.
 
@@ -67,7 +67,7 @@ Fue este incomprensible anhelo de autotormento, de autoviolar, lo que me guió p
 
 Una mañana, fría y húmeda, del invierno de 18—, me desperté de un sueño inquieto para encontrar que la cama estaba en llamas. Las cortinas de la cama estaban en llamas. Toda la casa estaba ardiendo. Nos salvamos con dificultad de la conflagración, mi esposa, un sirviente y yo. La destrucción fue completa. Toda mi fortuna terrenal se había consumido, y desde entonces me he visto reducido a una miseria que raya en la desesperación.
 
-No sé cómo describir el exacto sentimiento de horror que me poseyó cuando, al día siguiente, visité las ruinas. El corazón me latía con una angustia que no puedo expresar. No quedaba nada en pie, excepto una pared solitaria, que formaba el fondo del edificio. La pared, con extraña minuciosidad, había sido poco afectada por el fuego, una circunstancia que atribuí a que había sido revocada recientemente. En esta pared, en relieve y como si estuviera modelado en bajo relieve, aparecía la figura de un gato gigantesco. La imagen era de una exactitud maravillosa. Había incluso una soga alrededor del cuello del animal.
+No sé cómo describir el exacto sentimiento de horror que me poseyó cuando, al día siguiente, visité las ruinas. El corazón me latía con una angustia que no puedo expresar. No quedaba nada en pie, excepto una pared solitaria, que formaba el fondo del edificio. La pared, con extraña minuciosidad, había sido poco afectada por el fuego, una circunstación que atribuí a que había sido revocada recientemente. En esta pared, en relieve y como si estuviera modelado en bajo relieve, aparecía la figura de un gato gigantesco. La imagen era de una exactitud maravillosa. Había incluso una soga alrededor del cuello del animal.
 
 Cuando primero miré esta aparición, mi asombro y mi terror fueron extremos. Pero finalmente el pensamiento vino a mi mente. Mi esposa me había llamado la atención sobre el carácter del gato, PLUTO, que era todo negro, y me había hablado de la superstición que consideraba a todos los gatos negros brujas disfrazadas. No había mencionado esto en mi relato anterior, pero ahora lo recordaba. Recordé, también, que en el preciso momento en que había hundido el hacha en el cráneo del animal, la multitud, por alguna razón, había retrocedido de mí en horror y asombro. Nadie había intentado detenerme en mi trabajo solitario. ¿Había, entonces, mezclado con las cenizas de la casa quemada, algún ingrediente extraño que hubiera modelado esta horrible imagen en la pared? ¿Había sido el cadáver del gato, con la soga alrededor del cuello, arrojado por mis vecinos en el incendio ardiente? ¿Había sido su espíritu vengador que había modelado la imagen que ahora me atormentaba? ¡Preguntas que no podía responder!
 
@@ -85,9 +85,9 @@ Pronto me hundí en el libertinaje y me abandoné completamente al vicio. El ani
 
 Pero esta sensación pronto dio paso a la irritación. Y entonces llegó la época de los más horribles tormentos. El gato huía de mi presencia con terror indecible. Me sentí herido, y mi herida se convirtió en odio. Entonces nació en mi alma un espíritu de Perversidad. Filosofía no ha resuelto aún la fase de esta inclinación. Sin embargo, tan seguro como mi alma vive, hay en mí un espíritu de perversidad que no es más que la encarnación de aquella perversidad que ha torturado, con alguna forma de locura, al alma entera de la humanidad.
 
-Una mañana, me desperté con el sentimiento de una pesadilla sobre mi corazón. Una pesadilla de horror inexpresable. Y entonces, como en un sueño, sentí que había cometido un pecado mortal, un pecado que no admitía redención. ¡Y entonces, en el momento en que sentía más profundamente esta convicción, una voz en mi interior me susurraba que era todo una ilusión! ¡Que no había cometido ningún pecado! ¡Que era todo un sueño!
+Una mañana, me desperté con el sentimiento de una pesadilla sobre mi corazón. Una pesadilla de horror inexpresable. Y entonces, como en un sueño, sentí que había cometido un pecado mortal, un pecado que no admitía redención. en el momento en que sentía más profundamente esta convicción, una voz en mi interior me susurraba que era todo una ilusión! ¡Que no había cometido ningún pecado! ¡Que era todo un sueño!
 
-Al día siguiente, visité las ruinas de mi casa quemada. El corazón me latía con una angustia que no puedo expresar. No quedaba nada en pie, excepto una pared solitaria, que formaba el fondo del edificio. La pared, con extraña minuciosidad, había sido poco afectada por el fuego, una circunstancia que atribuí a que había sido revocada recientemente. En esta pared, en relieve y como si estuviera modelado en bajo relieve, aparecía la figura de un gato gigantesco. La imagen era de una exactidad maravillosa. Había incluso una soga alrededor del cuello del animal.
+Al día siguiente, visité las ruinas de mi casa quemada. El corazón me latía con una angustia que no puedo expresar. No quedaba nada en pie, excepto una pared solitaria, que formaba el fondo del edificio. La pared, con extraña minuciosidad, había sido poco afectada por el fuego, una circunstancia que atribuí a que había sido revocada recientemente. En esta pared, en relieve y como si estuviera modelado en bajo relieve, aparecía la figura de un gato gigantesco. La imagen era de una exactitud maravillosa. Había incluso una soga alrededor del cuello del animal.
 
 Cuando primero miré esta aparición, mi asombro y mi terror fueron extremos. Pero finalmente el pensamiento vino a mi mente. Mi esposa me había llamado la atención sobre el carácter del gato, PLUTO, que era todo negro, y me había hablado de la superstición que consideraba a todos los gatos negros brujas disfrazadas. No había mencionado esto en mi relato anterior, pero ahora lo recordaba. Recordé, también, que en el preciso momento en que había hundido el hacha en el cráneo del animal, la multitud, por alguna razón, había retrocedido de mí en horror y asombro. Nadie había intentado detenerme en mi trabajo solitario. ¿Había, entonces, mezclado con las cenizas de la casa quemada, algún ingrediente extraño que hubiera modelado esta horrible imagen en la pared? ¿Había sido el cadáver del gato, con la soga alrededor del cuello, arrojado por mis vecinos en el incendio ardiente? ¿Había sido su espíritu vengador que había modelado la imagen que ahora me atormentaba? ¡Preguntas que no podía responder!
 
@@ -164,7 +164,7 @@ UMBRAL_CONF = 0.5
 CACHE_DIR = "cache_cuentos"
 
 # Prompts para personajes
-PROM = {
+PROMPTS_PERSONAJES = {
     "corazon_delator": {
         "descripcion": "You are the narrator from 'The Tell-Tale Heart' by Edgar Allan Poe. You are a paranoid killer who murdered an old man because of his 'vulture eye'. Speak nervously, in short repetitive phrases. You hear heartbeats others can't hear. Never admit you're insane, but your speech proves it. Maintain character always."
     },
@@ -205,67 +205,79 @@ def procesar_cuento(cuento_key):
     return chunks, embeddings
 
 def inicializar_modelo():
-    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct", trust_remote_code=True)
-    modelo = AutoModelForCausalLM.from_pretrained(
-        "Qwen/Qwen2.5-1.5B-Instruct",
-        torch_dtype=torch.float16,
-        device_map="auto",
-        trust_remote_code=True
-    )
-    return tokenizer, modelo
+    try:
+        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct", trust_remote_code=True)
+        modelo = AutoModelForCausalLM.from_pretrained(
+            "Qwen/Qwen2.5-1.5B-Instruct",
+            torch_dtype=torch.float16,
+            device_map="auto",
+            trust_remote_code=True
+        )
+        return tokenizer, modelo
+    except Exception as e:
+        print(f"Error al cargar modelo: {e}")
+        return None, None
 
 def buscar_fragmentos(pregunta, cuento_key, todos_chunks, todos_embeddings, embedder):
-    chunks = todos_chunks[cuento_key]
-    embeddings = torch.tensor(todos_embeddings[cuento_key]).to(embedder.device)
-    pregunta_emb = embedder.encode(pregunta, convert_to_tensor=True, device=embedder.device)
-    cos_scores = util.cos_sim(pregunta_emb, embeddings)[0]
-    top_results = torch.topk(cos_scores, k=min(TOP_K, len(chunks)))
-    
-    fragmentos = []
-    for score, idx in zip(top_results[0], top_results[1]):
-        if score > UMBRAL_CONF:
-            fragmentos.append(chunks[idx])
-    return fragmentos if fragmentos else [chunks[0]]
+    try:
+        chunks = todos_chunks[cuento_key]
+        embeddings = torch.tensor(todos_embeddings[cuento_key]).to(embedder.device)
+        pregunta_emb = embedder.encode(pregunta, convert_to_tensor=True, device=embedder.device)
+        cos_scores = util.cos_sim(pregunta_emb, embeddings)[0]
+        top_results = torch.topk(cos_scores, k=min(TOP_K, len(chunks)))
+        
+        fragmentos = []
+        for score, idx in zip(top_results[0], top_results[1]):
+            if score > UMBRAL_CONF:
+                fragmentos.append(chunks[idx])
+        return fragmentos if fragmentos else [chunks[0]]
+    except Exception as e:
+        print(f"Error en búsqueda: {e}")
+        return [todos_chunks[cuento_key][0]]  # Fallback
 
 def generar_respuesta_llm(contexto, pregunta, personaje_key, tokenizer, modelo):
     """Genera respuesta usando el chat template correcto"""
-    prompt_sistema = PROMPTS_PERSONAJES[personaje_key]["descripcion"]
-    contexto_unido = "\n".join([f"[Fragment {i+1}]: {c}" for i, c in enumerate(contexto)])
-    
-    # Formato correcto para Qwen2.5
-    messages = [
-        {"role": "system", "content": prompt_sistema},
-        {"role": "user", "content": f"Context from story:\n{contexto_unido}\n\nQuestion: {pregunta}"}
-    ]
-    
-    # Aplica el template de chat correctamente
-    text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True
-    )
-    
-    # Tokeniza y genera
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=2048)
-    inputs = {k: v.to(modelo.device) for k, v in inputs.items()}
-    
-    with torch.no_grad():
-        outputs = modelo.generate(
-            **inputs,
-            max_new_tokens=300,
-            temperature=0.85,
-            do_sample=True,
-            repetition_penalty=1.18,
-            pad_token_id=tokenizer.eos_token_id,
-            eos_token_id=tokenizer.eos_token_id
+    try:
+        prompt_sistema = PROMPTS_PERSONAJES[personaje_key]["descripcion"]
+        contexto_unido = "\n".join([f"[Fragment {i+1}]: {c}" for i, c in enumerate(contexto)])
+        
+        # Formato correcto para Qwen2.5
+        messages = [
+            {"role": "system", "content": prompt_sistema},
+            {"role": "user", "content": f"Context from story:\n{contexto_unido}\n\nQuestion: {pregunta}"}
+        ]
+        
+        # Aplica el template de chat correctamente
+        text = tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
         )
-    
-    # Decodifica la respuesta
-    response_text = tokenizer.decode(
-        outputs[0][inputs['input_ids'].shape 
-        skip_special_tokens=True
-    )
-    return response_text.strip()
+        
+        # Tokeniza y genera
+        inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=2048)
+        inputs = {k: v.to(modelo.device) for k, v in inputs.items()}
+        
+        with torch.no_grad():
+            outputs = modelo.generate(
+                **inputs,
+                max_new_tokens=300,
+                temperature=0.85,
+                do_sample=True,
+                repetition_penalty=1.18,
+                pad_token_id=tokenizer.eos_token_id,
+                eos_token_id=tokenizer.eos_token_id
+            )
+        
+        # Decodifica la respuesta
+        response_text = tokenizer.decode(
+            outputs[0][inputs['input_ids'].shape[1]:], 
+            skip_special_tokens=True
+        )
+        return response_text.strip()
+    except Exception as e:
+        print(f"Error en generación: {e}")
+        return "I'm having trouble responding right now. Please try again."
 
 def inicializar_sistema():
     os.makedirs(CACHE_DIR, exist_ok=True)
@@ -273,20 +285,29 @@ def inicializar_sistema():
     todos_embeddings = {}
     
     for key in CUENTOS.keys():
-        chunks, embeddings = procesar_cuento(key)
-        todos_chunks[key] = chunks
-        todos_embeddings[key] = embeddings
+        try:
+            chunks, embeddings = procesar_cuento(key)
+            todos_chunks[key] = chunks
+            todos_embeddings[key] = embeddings
+        except Exception as e:
+            print(f"Error procesando {key}: {e}")
+            return {}, {}, None, None, None
     
     tokenizer, modelo = inicializar_modelo()
+    if tokenizer is None:
+        return {}, {}, None, None, None
+    
     embedder = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device='cpu')
     
     return todos_chunks, todos_embeddings, tokenizer, modelo, embedder
 
-# Variables globales para el sistema
+# Variables globales para el sistema (con manejo de errores)
 try:
     todos_chunks, todos_embeddings, tokenizer, modelo, embedder = inicializar_sistema()
+    if any(x is None for x in [todos_chunks, tokenizer, modelo, embedder]):
+        todos_chunks, todos_embeddings, tokenizer, modelo, embedder = {}, {}, None, None, None
 except:
-    todos_chunks, todos_embeddings, tokenizer, modelo, embedder = None, None, None, None, None
+    todos_chunks, todos_embeddings, tokenizer, modelo, embedder = {}, {}, None, None, None
 
 def chat_con_personaje(personaje_key, user_input, history):
     if not user_input.strip():
@@ -296,14 +317,18 @@ def chat_con_personaje(personaje_key, user_input, history):
     if isinstance(personaje_key, tuple):
         personaje_key = personaje_key[1]  # Extrae el key del dropdown
     
-    if todos_chunks is None:
-        return history + [("System Error", "Model not loaded")]
+    if todos_chunks is None or not todos_chunks:
+        return history + [("System", "Model not loaded. Please refresh the page.")]
     
-    fragmentos = buscar_fragmentos(user_input, personaje_key, todos_chunks, todos_embeddings, embedder)
-    respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, tokenizer, modelo)
-    
-    new_history = history + [(user_input, respuesta)]
-    return new_history
+    try:
+        fragmentos = buscar_fragmentos(user_input, personaje_key, todos_chunks, todos_embeddings, embedder)
+        respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, tokenizer, modelo)
+        
+        new_history = history + [(user_input, respuesta)]
+        return new_history
+    except Exception as e:
+        print(f"Error en chat: {e}")
+        return history + [(user_input, "Sorry, I encountered an error processing your request.")]
 
 with gr.Blocks(title="📚 Expanded Literature") as demo:
     gr.Markdown("# 📚 Expanded Literature v1.0")
