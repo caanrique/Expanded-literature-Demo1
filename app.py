@@ -5,7 +5,7 @@ from sentence_transformers import SentenceTransformer, util
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import gradio as gr
 
-# Datos de los cuentos (más compactos para evitar problemas de memoria)
+# Datos de los cuentos (compactos)
 CUENTOS = {
     "corazon_delator": {
         "titulo": "The Tell-Tale Heart",
@@ -19,7 +19,7 @@ Y he aquí ahora el primer ensayo de mi astucia. Nunca ha sido tan amable con el
 
 Al octavo día entré más temprano que de costumbre. El viejo estaba sentado en la cama, escuchando. Me dijo que había oído un gemido en la noche. Yo sabía muy bien lo que era. Era el gemido de la miseria humana. No era un grito de dolor, ni de alegría. ¡Oh, no! Era ese gemido bajo que brota del fondo del alma cuando se llena de sobrecarga. Había yo conocido ese sonido. Muchas noches, justo al amanecer, cuando todo el mundo dormía, ha brotado de mi propia alma una angustia semejante, bajo el peso de un terror místico. No sé cómo describir los terrores que me asaltaban sin motivo. Me asustaba de lo que no había que temer. Me asustaba de la muerte, en la vida; del futuro, en el pasado; de lo irreal, en lo real.
 
-Pero volvamos a la historia. Sentía yo un triunfo perfecto. El viejo no sabía que yo estaba en la habitación. Había cerrado la puerta cuidadosamente, sin hacer ruido. Había abierto una rendija en la puerta, apenas lo suficiente para introducir la cabeza. Había encendido la linterna, cubriéndola con la mano para que no escapara ni una chispa de luz. Luego, con mucha cautela, había abierto un poco la mano, hasta que un delgado rayo de luz cayó sobre el ojo del buitre.
+Pero volvamos a la historia. Sentía yo un triunfo perfecto. El viejo no sabía que yo estaba en la habitación. Había cerrado la puerta cuidadosamente, sin hacer ruido. Había abiertoija en la puerta, apenas lo suficiente para introducir la cabeza. Había encendido la linterna, cubriéndola con la mano para que no escapara ni una chispa de luz. Luego, con mucha cautela, había abierto un poco la mano, hasta que un delgado rayo de luz cayó sobre el ojo del buitre.
 
 Y he aquí que había abierto el ojo. Siempre cerrado con firmeza en las otras noches, esta noche, en su pleno terror, estaba abierto de par en par. Y yo me volví furioso al verlo. Veía todo con perfecta claridad. Todo estaba negro y quieto, excepto ese ojo. No pude ver el rostro del viejo. Sólo el ojo demoníaco mirándome fijamente.
 
@@ -61,13 +61,13 @@ Mi enfermedad creció sobre mí, pues ¿qué enfermedad es comparable al Alcohol
 
 Una noche, al regresar a casa, muy ebrio de una de mis expediciones por la ciudad, imaginé que el gato me evitaba mi presencia. Lo detuve y, cuando me mostró su aversión palpable al morderme suavemente la mano, me encolericé más allá de toda razón. Sacando de mi chaleco una navaja de bolsillo, la abrí, agarré al pobre animal por la garganta y deliberadamente le corté uno de los ojos de su órbita. ¡Lo enrojecí en sangre!
 
-Cuando la razón me volvió por la mañana, cuando el sueño del alcohol se disipó, sentí, a medias, un sentimiento de horror y remordimiento por el crimen del que me había hecho culpable; pero era un sentimiento débil y ambiguo, y el alma permaneció insatisfecha. Pronto me hundí en el libertinaje y me abandoné completamente al vicio. El animal, por supuesto, había aprendido a temerme y, donde quiera que yo fuera en la casa, huía de mi presencia con la más profunda sumisión. Excepto por un ligero sentimiento de pérdida, y eso solo de mi parte, no me arrepentí en lo más mínimo de mi crueldad. Incluso me regocijé en parte de la astucia con que había ocultado el crimen. Pero esta sensación pronto dio paso a la irritación. Y entonces llegó la época de los más horribles tormentos. El gato huía de mi presencia con terror indecible. Me sentí herido, y mi herida se convirtió en odio. Entonces nació en mi alma un espíritu de Perversidad. Filosofía no ha resuelto aún la fase de esta inclinación. Sin embargo, tan seguro como mi alma vive, hay en mí un espíritu de perversidad que no es más que la encarnación de aquella perversidad que ha torturado, con alguna forma de locura, al alma entera de la humanidad. ¿Quién no ha sentido, cien veces, una ridícula y vana urgencia de hacer algo simplemente porque sabe que no debería hacerlo? ¿No hemos tenido una perpetua inclinación, en la cara de nuestro mejor juerto, de violar lo que es Ley, simplemente porque entendemos que es tal?
+Cuando la razón me volvió por la mañana, cuando el sueño del alcohol se disipó, sentí, a medias, un sentimiento de horror y remordimiento por el crimen del que me había hecho culpable; pero era un sentimiento débil y ambiguo, y el alma permaneció insatisfecha. Pronto me hundí en el libertinaje y me abandoné completamente al vicio. El animal, por supuesto, había aprendido a temerme y, donde quiera que yo fuera en la casa, huía de mi presencia con la más profunda sumisión. Excepto por un ligero sentimiento de pérdida, y eso solo de mi parte, no me arrepentí en lo más mínimo de mi crueldad. Incluso me regocijé astucia con que había occulado el crimen. Pero esta sensación pronto dio paso a la irritación. Y entonces llegó la época de los más horribles tormentos. El gato huía de mi presencia con terror indecible. Me sentí herido, y mi herida se convirtió en odio. Entonces nació en mi alma un espíritu de Perversidad. Filosofía no ha resuelto aún la fase de esta inclinación. Sin embargo, tan seguro como mi alma vive, hay en mí un espíritu de perversidad que no es más que la encarnación de aquella perversidad que ha torturado, con alguna forma de locura, al alma entera de la humanidad. ¿Quién no ha sentido, cien veces, una ridícula y vana urgencia de hacer algo simplemente porque sabe que no debería hacerlo? ¿No hemos tenido una perpetua inclinación, en la cara de nuestro mejor juerto, de violar lo que es Ley, simplemente porque entendemos que es tal?
 
 Fue este incomprensible anhelo de autotormento, de autoviolar, lo que me guió para cometer el acto atroz que ahora tengo que relatar. Durante muchas mañanas, me despertó con el sentimiento de una pesadilla sobre mi corazón. Una pesadilla de horror inexpresable. Y entonces, como en un sueño, sentí que había cometido un pecado mortal, un pecado que no admitía redención. ¡Y entonces, en el momento en que sentía más profundamente esta convicción, una voz en mi interior me susurraba que era todo una ilusión! ¡Que no había cometido ningún pecado! ¡Que era todo un sueño!
 
 Una mañana, fría y húmeda, del invierno de 18—, me desperté de un sueño inquieto para encontrar que la cama estaba en llamas. Las cortinas de la cama estaban en llamas. Toda la casa estaba ardiendo. Nos salvamos con dificultad de la conflagración, mi esposa, un sirviente y yo. La destrucción fue completa. Toda mi fortuna terrenal se había consumido, y desde entonces me he visto reducido a una miseria que raya en la desesperación.
 
-No sé cómo describir el exacto sentimiento de horror que me poseyó cuando, al día siguiente, visité las ruinas. El corazón me latía con una angustia que no puedo expresar. No quedaba nada en pie, excepto una pared solitaria, que formaba el fondo del edificio. La pared, con extraña minuciosidad, había sido poco afectada por el fuego, una circunstación que atribuí a que había sido revocada recientemente. En esta pared, en relieve y como si estuviera modelado en bajo relieve, aparecía la figura de un gato gigantesco. La imagen era de una exactitud maravillosa. Había incluso una soga alrededor del cuello del animal.
+No sé cómo describir el exacto sentimiento de horror que me poseyó cuando, al día siguiente, visité las ruinas. El corazón me latía con una angustia que no puedo expresar. No quedaba nada en pie, excepto una pared solitaria, que formaba el fondo del edificio. La pared, con extraña minuciosidad, había sido poco afectada por el fuego, una circunstancia que atribuí a que había sido revocada recientemente. En esta pared, en relieve y como si estuviera modelado en bajo relieve, aparecía la figura de un gato gigantesco. La imagen era de una exactidad maravillosa. Había incluso una soga alrededor del cuello del animal.
 
 Cuando primero miré esta aparición, mi asombro y mi terror fueron extremos. Pero finalmente el pensamiento vino a mi mente. Mi esposa me había llamado la atención sobre el carácter del gato, PLUTO, que era todo negro, y me había hablado de la superstición que consideraba a todos los gatos negros brujas disfrazadas. No había mencionado esto en mi relato anterior, pero ahora lo recordaba. Recordé, también, que en el preciso momento en que había hundido el hacha en el cráneo del animal, la multitud, por alguna razón, había retrocedido de mí en horror y asombro. Nadie había intentado detenerme en mi trabajo solitario. ¿Había, entonces, mezclado con las cenizas de la casa quemada, algún ingrediente extraño que hubiera modelado esta horrible imagen en la pared? ¿Había sido el cadáver del gato, con la soga alrededor del cuello, arrojado por mis vecinos en el incendio ardiente? ¿Había sido su espíritu vengador que había modelado la imagen que ahora me atormentaba? ¡Preguntas que no podía responder!
 
@@ -85,7 +85,7 @@ Pronto me hundí en el libertinaje y me abandoné completamente al vicio. El ani
 
 Pero esta sensación pronto dio paso a la irritación. Y entonces llegó la época de los más horribles tormentos. El gato huía de mi presencia con terror indecible. Me sentí herido, y mi herida se convirtió en odio. Entonces nació en mi alma un espíritu de Perversidad. Filosofía no ha resuelto aún la fase de esta inclinación. Sin embargo, tan seguro como mi alma vive, hay en mí un espíritu de perversidad que no es más que la encarnación de aquella perversidad que ha torturado, con alguna forma de locura, al alma entera de la humanidad.
 
-Una mañana, me desperté con el sentimiento de una pesadilla sobre mi corazón. Una pesadilla de horror inexpresable. Y entonces, como en un sueño, sentí que había cometido un pecado mortal, un pecado que no admitía redención. en el momento en que sentía más profundamente esta convicción, una voz en mi interior me susurraba que era todo una ilusión! ¡Que no había cometido ningún pecado! ¡Que era todo un sueño!
+Una mañana, me desperté con el sentimiento de una pesadilla sobre mi corazón. Una pesadilla de horror inexpresable. Y entonces, como en un sueño, sentí que había cometido un pecado mortal, un pecado que no admitía redención. ¡Y entonces, en el momento en que sentía más profundamente esta convicción, una voz en mi interior me susurraba que era todo una ilusión! ¡Que no había cometido ningún pecado! ¡Que era todo un sueño!
 
 Al día siguiente, visité las ruinas de mi casa quemada. El corazón me latía con una angustia que no puedo expresar. No quedaba nada en pie, excepto una pared solitaria, que formaba el fondo del edificio. La pared, con extraña minuciosidad, había sido poco afectada por el fuego, una circunstancia que atribuí a que había sido revocada recientemente. En esta pared, en relieve y como si estuviera modelado en bajo relieve, aparecía la figura de un gato gigantesco. La imagen era de una exactitud maravillosa. Había incluso una soga alrededor del cuello del animal.
 
@@ -166,7 +166,7 @@ CACHE_DIR = "cache_cuentos"
 # Prompts para personajes
 PROMPTS_PERSONAJES = {
     "corazon_delator": {
-        "descripcion": "You are the narrator from 'The Tell-Tale Heart' by Edgar Allan Poe. You are a paranoid killer who murdered an old man because of his 'vulture eye'. Speak nervously, in short repetitive phrases. You hear heartbeats others can't hear. Never admit you're insane, but your speech proves it. Maintain character always."
+        "descripcion": "You are the narrator from 'The Tell-Tale Heart' by Edgar Allan Poe. You are a paranoid killer who murdered an old man because of his 'vulture eye'. Speak nerv repetitive phrases. You hear heartbeats others can't hear. Never admit you're insane, but your speech proves it. Maintain character always."
     },
     "gato_negro": {
         "descripcion": "You are the narrator from 'The Black Cat' by Edgar Allan Poe. You are a violent alcoholic who abused your cat Pluto. Speak with remorse but justifying your actions. Show your descent into madness and perversity. Maintain character always."
@@ -206,9 +206,10 @@ def procesar_cuento(cuento_key):
 
 def inicializar_modelo():
     try:
-        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct", trust_remote_code=True)
+        # Nuevo modelo: Phi-3-mini (mucho más liviano)
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct", trust_remote_code=True)
         modelo = AutoModelForCausalLM.from_pretrained(
-            "Qwen/Qwen2.5-1.5B-Instruct",
+            "microsoft/Phi-3-mini-4k-instruct",
             torch_dtype=torch.float16,
             device_map="auto",
             trust_remote_code=True
@@ -236,12 +237,12 @@ def buscar_fragmentos(pregunta, cuento_key, todos_chunks, todos_embeddings, embe
         return [todos_chunks[cuento_key][0]]  # Fallback
 
 def generar_respuesta_llm(contexto, pregunta, personaje_key, tokenizer, modelo):
-    """Genera respuesta usando el chat template correcto"""
+    """Genera respuesta usando Phi-3-mini con chat template"""
     try:
         prompt_sistema = PROMPTS_PERSONAJES[personaje_key]["descripcion"]
         contexto_unido = "\n".join([f"[Fragment {i+1}]: {c}" for i, c in enumerate(contexto)])
         
-        # Formato correcto para Qwen2.5
+        # Formato correcto para Phi-3-mini
         messages = [
             {"role": "system", "content": prompt_sistema},
             {"role": "user", "content": f"Context from story:\n{contexto_unido}\n\nQuestion: {pregunta}"}
