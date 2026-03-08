@@ -5,7 +5,7 @@ from sentence_transformers import SentenceTransformer, util
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import gradio as gr
 
-# Datos de los cuentos (compactos)
+# Datos de los cuentos (copiados exactamente de tu Colab)
 CUENTOS = {
     "corazon_delator": {
         "titulo": "The Tell-Tale Heart",
@@ -61,13 +61,13 @@ Mi enfermedad creció sobre mí, pues ¿qué enfermedad es comparable al Alcohol
 
 Una noche, al regresar a casa, muy ebrio de una de mis expediciones por la ciudad, imaginé que el gato me evitaba mi presencia. Lo detuve y, cuando me mostró su aversión palpable al morderme suavemente la mano, me encolericé más allá de toda razón. Sacando de mi chaleco una navaja de bolsillo, la abrí, agarré al pobre animal por la garganta y deliberadamente le corté uno de los ojos de su órbita. ¡Lo enrojecí en sangre!
 
-Cuando la razón me volvió por la mañana, cuando el sueño del alcohol se disipó, sentí, a medias, un sentimiento de horror y remordimiento por el crimen del que me había hecho culpable; pero era un sentimiento débil y ambiguo, y el alma permaneció insatisfecha. Pronto me hundí en el libertinaje y me abandoné completamente al vicio. El animal, por supuesto, había aprendido a temerme y, donde quiera que yo fuera en la casa, huía de mi presencia con la más profunda sumisión. Excepto por un ligero sentimiento de pérdida, y eso solo de mi parte, no me arrepentí en lo más mínimo de mi crueldad. Incluso me regocijé en parte de la astucia con que había ocultado el crimen. Pero esta sensación pronto dio paso a la irritación. Y entonces llegó la época de los más horribles tormentos. El gato huía de mi presencia con terror indecible. Me sentí herido, y mi herida se convirtió en odio. Entonces nació en mi alma un espíritu de Perversidad. Filosofía no ha resuelto aún la fase de esta inclinación. Sin embargo, tan seguro como mi alma vive, hay en mí un espíritu de perversidad que no es más que la encarnación de aquella perversidad que ha torturado, con alguna forma de locura, al alma entera de la humanidad. ¿Quién no ha sentido, cien veces, una ridícula y vana urgencia de hacer algo simplemente porque sabe que no debería hacerlo? ¿No hemos tenido una perpetua inclinación, en la cara de nuestro mejor juerto, de violar lo que es Ley, simplemente porque entendemos que es tal?
+Cuando la razón me volvió por la mañana, cuando el sueño del alcohol se disipó, sentí, a medias, un sentimiento de horror y remordimiento por el crimen del que me había hecho culpable; pero era un sentimiento débil y ambiguo, y el alma permaneció insatisfecha. Pronto me hundí en el libertinaje y me abandoné completamente al vicio. El animal, por supuesto, había aprendido a temerme y, donde quiera que yo fuera en la casa, huía de mi presencia con la más profunda sumisión. Excepto por un ligero sentimiento de pérdida, y eso solo de mi parte, no me arrepentí en lo más mínimo de mi crueldad. Incluso me regocijé en parte de la astucia con que había ocultado el crimen. Pero esta sensación pronto dio paso a la irritación. Y entonces llegó la época de los más horribles tormentos. El gato huía de mi presencia con terror indecible. Me sentí herido, y mi herida se convirtió en odio. Entonces nació en mi alma un espíritu de Perversidad. Filosofía no ha resuelto aún la fase de esta inclinación. Sin embargo, tan seguro como mi alma vive, hay en mí un espíritu de perversidad que no es más que la encarnación de aquella perversidad que ha torturado, con alguna forma de locura, al alma entera de la humanidad. ¿Quién no ha sentido, cien veces, una ridícula y vana urgencia de hacer algo simplemente porque sabe que no debería hacerlo? ¿No hemos tenido una perpetua inclinación, en la cara de nuestro mejor juicio, de violar lo que es Ley, simplemente porque entendemos que es tal?
 
 Fue este incomprensible anhelo de autotormento, de autoviolar, lo que me guió para cometer el acto atroz que ahora tengo que relatar. Durante muchas mañanas, me despertó con el sentimiento de una pesadilla sobre mi corazón. Una pesadilla de horror inexpresable. Y entonces, como en un sueño, sentí que había cometido un pecado mortal, un pecado que no admitía redención. ¡Y entonces, en el momento en que sentía más profundamente esta convicción, una voz en mi interior me susurraba que era todo una ilusión! ¡Que no había cometido ningún pecado! ¡Que era todo un sueño!
 
 Una mañana, fría y húmeda, del invierno de 18—, me desperté de un sueño inquieto para encontrar que la cama estaba en llamas. Las cortinas de la cama estaban en llamas. Toda la casa estaba ardiendo. Nos salvamos con dificultad de la conflagración, mi esposa, un sirviente y yo. La destrucción fue completa. Toda mi fortuna terrenal se había consumido, y desde entonces me he visto reducido a una miseria que raya en la desesperación.
 
-No sé cómo describir el exacto sentimiento de horror que me poseyó cuando, al día siguiente, visité las ruinas. El corazón me latía con una angustia que no puedo expresar. No quedaba nada en pie, excepto una pared solitaria, que formaba el fondo del edificio. La pared, con extraña minuciosidad, había sido poco afectada por el fuego, una circunstancia que atribuí a que había sido revocada recientemente. En esta pared, en relieve y como si estuviera modelado en bajo relieve, aparecía la figura de un gato gigantesco. La imagen era de una exactitud maravillosa. Había incluso una soga alrededor del cuello del animal.
+No sé cómo describir el exacto sentimiento de horror que me poseyó cuando, al día siguiente, visité las ruinas. El corazón me latía con una angustia que no puedo expresar. No quedaba nada en pie, excepto una pared solitaria, que formaba el fondo del edificio. La pared, con extraña minuciosidad, había sido poco afectada por el fuego, una circunstancia que atribuí a que había sido revocada recientemente. En esta pared, en relief y como si estuviera modelado en bajo relieve, aparecía la figura de un gato gigantesco. La imagen era de una exactitud maravillosa. Había incluso una soga alrededor del cuello del animal.
 
 Cuando primero miré esta aparición, mi asombro y mi terror fueron extremos. Pero finalmente el pensamiento vino a mi mente. Mi esposa me había llamado la atención sobre el carácter del gato, PLUTO, que era todo negro, y me había hablado de la superstición que consideraba a todos los gatos negros brujas disfrazadas. No había mencionado esto en mi relato anterior, pero ahora lo recordaba. Recordé, también, que en el preciso momento en que había hundido el hacha en el cráneo del animal, la multitud, por alguna razón, había retrocedido de mí en horror y asombro. Nadie había intentado detenerme en mi trabajo solitario. ¿Había, entonces, mezclado con las cenizas de la casa quemada, algún ingrediente extraño que hubiera modelado esta horrible imagen en la pared? ¿Había sido el cadáver del gato, con la soga alrededor del cuello, arrojado por mis vecinos en el incendio ardiente? ¿Había sido su espíritu vengador que había modelado la imagen que ahora me atormentaba? ¡Preguntas que no podía responder!
 
@@ -97,7 +97,7 @@ Durante algunos meses, me sentí aliviado de la tortura de esta alucinación. Un
         "titulo": "The Metamorphosis",
         "autor": "Franz Kafka",
         "personaje": "Gregor Samsa",
-        "texto": """Al despertar Gregorio Samsa una mañana, tras un sueño intranquilo, encontróse en su cama convertido en un monstruoso insecto. Hallábase echado de espaldas, duro como una coraza, y al alzar un poco la cabeza veía el vientre convexo y oscuro, surcado por curvadas callosidades, sobre cuya cima la colcha, a punto de escurrirse, se mantenía precariamente. Tenía muchas patas, penosamente delgadas en comparación con el grosor normal de sus demás miembros, que se agitaban sin concierto ante sus ojos.
+        "texto": """Al despertar Gregorio Samsa una mañana, tras un sueño intranquilo, encontróse en su cema convertido en un monstruoso insecto. Hallábase echado de espaldas, duro como una coraza, y al alzar un poco la cabeza veía el vientre convexo y oscuro, surcado por curvadas callosidades, sobre cuya cima la colcha, a punto de escurrirse, se mantenía precariamente. Tenía muchas patas, penosamente delgadas en comparación con el grosor normal de sus demás miembros, que se agitaban sin concierto ante sus ojos.
 
 —¿Qué me ha ocurrido?—pensó. No era un sueño. Su habitación, una habitación corriente, aunque excesivamente pequeña, aparecía tranquila entre las cuatro paredes bien conocidas. Sobre la mesa, extendida y abierta, estaba la colección de paños de seda y muestras de lana que el agente de comercio Samsa había traído de su último viaje. El retrato de una dama con sombrero de piel, que Gregorio había recortado de una revista ilustrada y colocado en un marco dorado, pendía de la pared. Gregorio miró hacia la ventana; el tiempo gris (se oía llover sobre el techo de cinc) le hizo sentir una gran melancolía. ¿Qué ocurriría si continuara durmiendo un rato, olvidando todas estas necedades? Pensó que, si permanecía en la cama, no podría librarse de sus fantasías. Pero tal vez no era tan absurdo lo que le sucedía.
 
@@ -163,7 +163,7 @@ TOP_K = 3
 UMBRAL_CONF = 0.5
 CACHE_DIR = "cache_cuentos"
 
-# Prompts para personajes
+# Prompts para personajes (adaptados al inglés para el modelo)
 PROMPTS_PERSONAJES = {
     "corazon_delator": {
         "descripcion": "You are the narrator from 'The Tell-Tale Heart' by Edgar Allan Poe. You are a paranoid killer who murdered an old man because of his 'vulture eye'. Speak nervously, in short repetitive phrases. You hear heartbeats others can't hear. Never admit you're insane, but your speech proves it. Maintain character always."
@@ -206,10 +206,10 @@ def procesar_cuento(cuento_key):
 
 def inicializar_modelo():
     try:
-        # Nuevo modelo: Phi-3-mini (mucho más liviano)
-        tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct", trust_remote_code=True)
+        # Volvemos a usar Qwen2.5 como en tu Colab funcional
+        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct", trust_remote_code=True)
         modelo = AutoModelForCausalLM.from_pretrained(
-            "microsoft/Phi-3-mini-4k-instruct",
+            "Qwen/Qwen2.5-1.5B-Instruct",
             torch_dtype=torch.float16,
             device_map="auto",
             trust_remote_code=True
@@ -237,25 +237,25 @@ def buscar_fragmentos(pregunta, cuento_key, todos_chunks, todos_embeddings, embe
         return [todos_chunks[cuento_key][0]]  # Fallback
 
 def generar_respuesta_llm(contexto, pregunta, personaje_key, tokenizer, modelo):
-    """Genera respuesta usando Phi-3-mini con formato de mensajes corregido"""
+    """Genera respuesta usando el chat template exacto como en tu Colab funcional"""
     try:
         prompt_sistema = PROMPTS_PERSONAJES[personaje_key]["descripcion"]
-        contexto_unido = "\n".join([f"[Fragment {i+1}]: {c}" for i, c in enumerate(contexto)])
+        contexto_unido = "\n".join([f"[Fragmento {i+1}]: {c}" for i, c in enumerate(contexto)])
         
-        # Formato garantizado como diccionarios puros para Phi-3
+        # ESTE ES EL FORMATO EXACTO QUE FUNCIONA EN TU COLAB
         messages = [
-            {"role": "system", "content": str(prompt_sistema)},
-            {"role": "user", "content": str(f"Context from story:\n{contexto_unido}\n\nQuestion: {pregunta}")}
+            {"role": "system", "content": prompt_sistema},
+            {"role": "user", "content": f"Contexto del cuento:\n{contexto_unido}\n\nPregunta: {pregunta}"}
         ]
         
-        # Aplica el template de chat correctamente
+        # Aplica el template como en tu Colab
         text = tokenizer.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True
         )
         
-        # Tokeniza y genera
+        # Tokeniza y genera como en tu Colab
         inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=2048)
         inputs = {k: v.to(modelo.device) for k, v in inputs.items()}
         
@@ -266,16 +266,11 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, tokenizer, modelo):
                 temperature=0.85,
                 do_sample=True,
                 repetition_penalty=1.18,
-                pad_token_id=tokenizer.eos_token_id,
-                eos_token_id=tokenizer.eos_token_id
+                pad_token_id=tokenizer.eos_token_id
             )
         
-        # Decodifica la respuesta
-        response_text = tokenizer.decode(
-            outputs[0][inputs['input_ids'].shape[1]:], 
-            skip_special_tokens=True
-        )
-        return response_text.strip()
+        respuesta = tokenizer.decode(outputs[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True)
+        return respuesta.strip()
     except Exception as e:
         print(f"Error en generación: {e}")
         return "I'm having trouble responding right now. Please try again."
@@ -302,7 +297,7 @@ def inicializar_sistema():
     
     return todos_chunks, todos_embeddings, tokenizer, modelo, embedder
 
-# Variables globales para el sistema (con manejo de errores)
+# Variables globales para el sistema
 try:
     todos_chunks, todos_embeddings, tokenizer, modelo, embedder = inicializar_sistema()
     if any(x is None for x in [todos_chunks, tokenizer, modelo, embedder]):
