@@ -1,0 +1,6 @@
+cache_cuentos/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+.ipynb_checkpoints/
