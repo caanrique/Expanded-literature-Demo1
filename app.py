@@ -290,27 +290,40 @@ def buscar_fragmentos(pregunta, cuento_key, embedder):
         print(f"⚠️ Error en búsqueda: {e}")
         return [CUENTOS[cuento_key]['texto'][:500]]
 
-def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
+def generar_respuesta_llm(contexto, pregunta, personaje_key, llm, history):
+    """Genera respuesta usando el LLM con prompt estructurado que incluye el historial"""
     try:
         prompt_sistema = PROMPTS_PERSONAJES[personaje_key]["descripcion"]
         contexto_unido = "\n".join([f"[Fragmento {i+1}]: {c}" for i, c in enumerate(contexto)])
         
-        messages = [
-            {"role": "system", "content": prompt_sistema},
-            {"role": "user", "content": f"Contexto del cuento:\n{contexto_unido}\n\nPregunta: {pregunta}"}
-        ]
+        # Construimos los mensajes: empezamos con system, luego todo el historial, y finalmente el nuevo user
+        messages = [{"role": "system", "content": prompt_sistema}]
+        
+        # Agregamos el historial de la conversación (si existe)
+        for msg in history:
+            # history viene como lista de diccionarios con role y content
+            if msg["role"] in ["user", "assistant"]:
+                messages.append(msg)
+        
+        # Agregamos el mensaje actual del usuario (con el contexto)
+        messages.append({"role": "user", "content": f"Contexto del cuento:\n{contexto_unido}\n\nPregunta: {pregunta}"})
+        
+        # Convertimos los mensajes a formato de texto con tokens especiales
         prompt = ""
         for msg in messages:
             if msg["role"] == "system":
                 prompt += f"<|im_start|>system\n{msg['content']}<|im_end|>\n"
             elif msg["role"] == "user":
                 prompt += f"<|im_start|>user\n{msg['content']}<|im_end|>\n"
+            elif msg["role"] == "assistant":
+                prompt += f"<|im_start|>assistant\n{msg['content']}<|im_end|>\n"
         prompt += "<|im_start|>assistant\n"
         
+        # Generar respuesta
         output = llm(
             prompt,
             max_tokens=200,
-            temperature=0.85,
+            temperature=0.7,  # Bajamos la temperatura para reducir alucinaciones
             top_p=0.9,
             repeat_penalty=1.18,
             stop=["<|im_end|>", "<|endoftext|>"],
@@ -320,7 +333,7 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
         return respuesta
     except Exception as e:
         print(f"❌ Error en generación: {e}")
-        return "I'm having trouble responding right now. Please try again."
+        return "Lo siento, estoy teniendo problemas para responder."
 
 # =============================================================================
 # 💬 LÓGICA DE CHAT
