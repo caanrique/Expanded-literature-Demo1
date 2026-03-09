@@ -10,7 +10,7 @@ import gradio as gr
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
 # =============================================================================
-# 📚 DATOS DE LOS CUENTOS (mismos textos, no los repito por brevedad)
+# 📚 DATOS DE LOS CUENTOS (mismos textos, pon los completos)
 # =============================================================================
 CUENTOS = {
     "corazon_delator": {
@@ -51,7 +51,7 @@ Y ahora, una nueva angustia se apoderó de mí: el sonido. ¡Oh, Dios! ¡Qué so
 
 No podía soportarlo más. Me sentía sofocado. Me sentía asfixiado. El sonido crecía sin cesar. Los agentes seguían charlando. ¡Pero yo sabía que ellos también lo oían! ¡Sabían todo! ¡Estaban fingiendo! ¡Se estaban burlando de mí!
 
-De repente, me puse en pie. Grité: "¡Basta! ¡Confieso todo! ¡Desgarrad las tablas! ¡Aquí, aquí! ¡Es su horrible corazón el que late!"""   
+De repente, me puse en pie. Grité: "¡Basta! ¡Confieso todo! ¡Desgarrad las tablas! ¡Aquí, aquí! ¡Es su horrible corazón el que late!"""  
     },
     "gato_negro": {
         "titulo": "The Black Cat",
@@ -166,16 +166,16 @@ Pero en el fondo de sus corazones, sabían que nunca olvidarían a Gregorio, el 
 # =============================================================================
 # ⚙️ CONFIGURACIÓN GLOBAL (optimizada para memoria)
 # =============================================================================
-CHUNK_SIZE = 100          # Reducido para ahorrar memoria
-TOP_K = 2                  # Menos fragmentos
+CHUNK_SIZE = 100
+TOP_K = 2
 UMBRAL_CONF = 0.5
 CACHE_DIR = "cache_cuentos"
 
-# Modelo LLM más pequeño: 0.5B en lugar de 1.5B
+# Modelo LLM más pequeño: 0.5B
 LLM_REPO_ID = "Qwen/Qwen2.5-0.5B-Instruct-GGUF"
 LLM_FILENAME = "qwen2.5-0.5b-instruct-q4_k_m.gguf"
 
-# Embedder (se mantiene, es ligero)
+# Embedder (ligero)
 EMBEDDER_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
 
 # Prompts de personaje (igual)
@@ -192,7 +192,7 @@ PROMPTS_PERSONAJES = {
 }
 
 # =============================================================================
-# 🧩 FUNCIONES AUXILIARES (sin cambios)
+# 🧩 FUNCIONES AUXILIARES
 # =============================================================================
 def dividir_en_chunks(texto, chunk_size=CHUNK_SIZE, overlap=20):
     palabras = texto.split()
@@ -253,8 +253,8 @@ def get_llm():
             _llm = Llama.from_pretrained(
                 repo_id=LLM_REPO_ID,
                 filename=LLM_FILENAME,
-                n_ctx=1024,           # Contexto reducido
-                n_threads=1,           # Un solo hilo para menos memoria
+                n_ctx=1024,
+                n_threads=1,
                 n_gpu_layers=0,
                 verbose=False,
                 cache_dir='./cache_llm'
@@ -275,7 +275,7 @@ def get_cuento_data(cuento_key):
     return _todos_chunks[cuento_key], _todos_embeddings[cuento_key]
 
 # =============================================================================
-# 🔍 BÚSQUEDA Y GENERACIÓN (con from_numpy corregido)
+# 🔍 BÚSQUEDA Y GENERACIÓN
 # =============================================================================
 def buscar_fragmentos(pregunta, cuento_key, embedder):
     try:
@@ -309,7 +309,7 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
         
         output = llm(
             prompt,
-            max_tokens=200,            # Respuestas más cortas
+            max_tokens=200,
             temperature=0.85,
             top_p=0.9,
             repeat_penalty=1.18,
@@ -342,7 +342,6 @@ def chat_con_personaje(personaje_key, user_input, history):
         fragmentos = buscar_fragmentos(user_input, personaje_key, embedder_local)
         respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, llm_local)
         
-        # Liberar memoria
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -357,10 +356,10 @@ def chat_con_personaje(personaje_key, user_input, history):
         return history + [{"role": "assistant", "content": "Sorry, I encountered an error. Please try again."}]
 
 # =============================================================================
-# 🎨 INTERFAZ GRADIO
+# 🎨 INTERFAZ GRADIO (sin theme en Blocks, sin type en Chatbot)
 # =============================================================================
-with gr.Blocks(title="📚 Expanded Literature (Ligero)", theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# 📚 Expanded Literature v1.4 (Modo Ligero)")
+with gr.Blocks(title="📚 Expanded Literature (Ligero)") as demo:  # theme se pasa en launch
+    gr.Markdown("# 📚 Expanded Literature v1.5 (Modo Ligero)")
     gr.Markdown("*Converse with classic literature characters | Conversa con personajes clásicos*")
     
     status_box = gr.Textbox(
@@ -379,10 +378,10 @@ with gr.Blocks(title="📚 Expanded Literature (Ligero)", theme=gr.themes.Soft()
         value="corazon_delator"
     )
     
+    # Chatbot sin parámetro 'type' (Gradio 6.9.0 detecta automáticamente)
     chatbot = gr.Chatbot(
         label="💬 Conversation",
         height=400,
-        type="messages",
         avatar_images=(None, "https://huggingface.co/front/assets/huggingface_logo.svg")
     )
     
@@ -425,6 +424,15 @@ with gr.Blocks(title="📚 Expanded Literature (Ligero)", theme=gr.themes.Soft()
     
     demo.load(lambda: "✅ Interface ready. Send a message to load models (modelo 0.5B).", inputs=None, outputs=status_box)
 
+# =============================================================================
+# 🚀 PUNTO DE ENTRADA
+# =============================================================================
 if __name__ == "__main__":
     demo.queue(max_size=10, default_concurrency_limit=1)
-    demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)), debug=False)
+    # El theme se pasa aquí, en launch()
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", 7860)),
+        theme=gr.themes.Soft(),  # <-- theme movido aquí
+        debug=False
+    )
