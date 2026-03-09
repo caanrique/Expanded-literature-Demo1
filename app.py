@@ -1,11 +1,14 @@
 import os
 import pickle
+import gc
 import torch
 from sentence_transformers import SentenceTransformer, util
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from llama_cpp import Llama
 import gradio as gr
 
-# Datos de los cuentos (copiados exactamente de tu Colab)
+# =============================================================================
+# 📚 DATOS DE LOS CUENTOS (Hardcodeados para la demo)
+# =============================================================================
 CUENTOS = {
     "corazon_delator": {
         "titulo": "The Tell-Tale Heart",
@@ -77,9 +80,9 @@ Nuestro hogar destruido había sido sustituido por una vivienda más modesta en 
 
 Un día, en una de mis expediciones por las tabernas más infames de la ciudad, noté un animal negro de un tamaño casi igual al del perdido Pluto. Tenía exactamente la misma apariencia. Era un gato negro, pero con una notable diferencia: Pluto no tenía ninguna marca blanca en su pelaje, pero este tenía una mancha blanca, aunque indefinida, que cubría casi todo el pecho. Al acercarme a él con la intención de acariciarlo, se retiró, con un aire de excesiva cautela, de mi mano. Esto me sorprendió y me ofendió. Sin embargo, continué mi camino. Pero el animal me siguió hasta la casa. Una vez allí, se hizo tan amistoso que ganó el afecto de mi esposa. En cuanto a mí, pronto sentí hacia él la aversión que había sentido por el otro gato. Este sentimiento de aversión aumentó con rapidez hacia el odio más amargo. Y esto, sin duda, fue en parte debido a la semejanza del animal con el que yo había destruido. Era exactamente del mismo tamaño y aspecto. Tenía el mismo pelo negro y largo. Pero tenía una mancha blanca en el pecho.
 
-Mi aversión hacia el gato parecía aumentar con su afecto hacia mí. Evitaba mi presencia tanto como era posible, pero cuando no podía evitarla, me miraba con una expresión de odio que me helaba la sangre. Sin embargo, de mi debilidad de carácter, y no de ninguna otra causa, retuve de cometer una violencia que mi instinto me impulsaba a cometer. Durante varias semanas, me abstuve de maltratar al animal. Pero gradualmente, casi imperceptiblemente, una sensación de fastidio hacia él se convirtió en odio. Y entonces llegó la época de los más horribles tormentos. El animal huía de mi presencia con terror indecible. Me sentí herido, y mi herida se convirtió en odio.
+Mi aversión hacia el gato parecía aumentar con su afecto hacia mí. Evitaba mi presencia tanto como era posible, pero cuando no podía evitarla, me miraba con una expresión de odio que me helaba la sangre. Sin embargo, de mi debilidad de carácter, y no de ninguna otra causa, retuve de cometer una violencia que mi instinto me impulsaba a cometer. Durante varias semanas, me abstuve de maltratar al animal. Pero gradualmente, casi imperceptiblemente, una sensación de fastidio hacia él se convirtió en odio. Y entonces llegó la época de los más horribles tormentos. El gato huía de mi presencia con terror indecible. Me sentí herido, y mi herida se convirtió en odio.
 
-Una noche, al regresar a casa, muy ebrio de una de mis expediciones por la ciudad, encontré al gato en mi camino. Lo levanté por el cuello con una mano, y con la otra cogí una navaja de bolsillo, la abrió, y deliberadamente le corté uno de los ojos de su órbita. ¡Lo enrojecí en sangre! Cuando la razón me volvió por la mañana, cuando el sueño del alcohol se disipó, sentí, a medias, un sentimiento de horror y remordimiento por el crimen del que me había hecho culpable; pero era un sentimiento débil y ambiguo, y el alma permaneció insatisfecha.
+Una noche, al regresar a casa, muy ebrio de una de mis expediciones por la ciudad, encontré al gato en mi camino. Lo levanté por el cuello con una mano, y con la otra cogí una navaja de bolsillo, la abrió, y deliberadamente le cortó uno de los ojos de su órbita. ¡Lo enrojecí en sangre! Cuando la razón me volvió por la mañana, cuando el sueño del alcohol se disipó, sentí, a medias, un sentimiento de horror y remordimiento por el crimen del que me había hecho culpable; pero era un sentimiento débil y ambiguo, y el alma permaneció insatisfecha.
 
 Pronto me hundí en el libertinaje y me abandoné completamente al vicio. El animal, por supuesto, había aprendido a temerme y, donde quiera que yo fuera en la casa, huía de mi presencia con la más profunda sumisión. Excepto por un ligero sentimiento de pérdida, y eso solo de mi parte, no me arrepentí en lo más mínimo de mi crueldad. Incluso me regocijé en parte de la astucia con que había ocultado el crimen.
 
@@ -157,13 +160,23 @@ Pero en el fondo de sus corazones, sabían que nunca olvidarían a Gregorio, el 
     }
 }
 
-# Configuración
+# =============================================================================
+# ⚙️ CONFIGURACIÓN GLOBAL
+# =============================================================================
 CHUNK_SIZE = 150
 TOP_K = 3
 UMBRAL_CONF = 0.5
 CACHE_DIR = "cache_cuentos"
 
-# Prompts para personajes (adaptados al inglés para el modelo)
+# Modelo LLM GGUF (ligero y rápido para CPU)
+# Usamos Qwen2.5-1.5B en formato GGUF Q4_K_M (~1.2 GB RAM)
+LLM_REPO_ID = "Qwen/Qwen2.5-1.5B-Instruct-GGUF"
+LLM_FILENAME = "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+
+# Embedder para búsqueda semántica (multilingüe, ligero)
+EMBEDDER_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
+
+# Prompts de personaje (en inglés para mejor rendimiento del modelo)
 PROMPTS_PERSONAJES = {
     "corazon_delator": {
         "descripcion": "You are the narrator from 'The Tell-Tale Heart' by Edgar Allan Poe. You are a paranoid killer who murdered an old man because of his 'vulture eye'. Speak nervously, in short repetitive phrases. You hear heartbeats others can't hear. Never admit you're insane, but your speech proves it. Maintain character always."
@@ -176,7 +189,12 @@ PROMPTS_PERSONAJES = {
     }
 }
 
+# =============================================================================
+# 🧩 FUNCIONES AUXILIARES
+# =============================================================================
+
 def dividir_en_chunks(texto, chunk_size=CHUNK_SIZE, overlap=30):
+    """Divide el texto en chunks solapados para mejor recuperación"""
     palabras = texto.split()
     chunks = []
     for i in range(0, len(palabras), chunk_size - overlap):
@@ -185,172 +203,331 @@ def dividir_en_chunks(texto, chunk_size=CHUNK_SIZE, overlap=30):
             chunks.append(chunk)
     return chunks
 
-def procesar_cuento(cuento_key):
+def procesar_cuento(cuento_key, embedder):
+    """Procesa un cuento: divide en chunks y genera embeddings (con cache)"""
     cuento = CUENTOS[cuento_key]
     cache_file = os.path.join(CACHE_DIR, f"{cuento_key}.pkl")
     os.makedirs(CACHE_DIR, exist_ok=True)
     
+    # Intentar cargar desde cache
     if os.path.exists(cache_file):
-        with open(cache_file, 'rb') as f:
-            data = pickle.load(f)
-            return data['chunks'], data['embeddings']
+        try:
+            with open(cache_file, 'rb') as f:
+                data = pickle.load(f)
+                return data['chunks'], data['embeddings']
+        except:
+            pass  # Si falla el cache, regenerar
     
+    # Procesar desde cero
     chunks = dividir_en_chunks(cuento['texto'])
-    embedder = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device='cpu')
     embeddings = embedder.encode(chunks, convert_to_tensor=True, device='cpu')
     
+    # Guardar en cache
     with open(cache_file, 'wb') as f:
-        pickle.dump({'chunks': chunks, 'embeddings': embeddings.cpu().numpy()}, f)
+        pickle.dump({
+            'chunks': chunks, 
+            'embeddings': embeddings.cpu().numpy()
+        }, f)
     
     return chunks, embeddings
 
-def inicializar_modelo():
+def inicializar_embedder():
+    """Carga el modelo de embeddings una sola vez"""
+    return SentenceTransformer(EMBEDDER_NAME, device='cpu', cache_folder='./cache_embedder')
+
+def inicializar_llm():
+    """Carga el modelo LLM en formato GGUF optimizado para CPU"""
     try:
-        # Volvemos a usar Qwen2.5 como en tu Colab funcional
-        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct", trust_remote_code=True)
-        modelo = AutoModelForCausalLM.from_pretrained(
-            "Qwen/Qwen2.5-1.5B-Instruct",
-            torch_dtype=torch.float16,
-            device_map="auto",
-            trust_remote_code=True
+        # Descargar y cargar modelo GGUF desde HuggingFace
+        llm = Llama.from_pretrained(
+            repo_id=LLM_REPO_ID,
+            filename=LLM_FILENAME,
+            n_ctx=4096,           # Context window
+            n_threads=2,          # Usar 2 threads (CPU del Space gratuito)
+            n_gpu_layers=0,       # Forzar CPU-only
+            verbose=False,
+            cache_dir='./cache_llm'
         )
-        return tokenizer, modelo
+        return llm
     except Exception as e:
-        print(f"Error al cargar modelo: {e}")
-        return None, None
+        print(f"❌ Error cargando LLM: {e}")
+        return None
 
 def buscar_fragmentos(pregunta, cuento_key, todos_chunks, todos_embeddings, embedder):
+    """Busca los fragmentos más relevantes usando similitud coseno"""
     try:
         chunks = todos_chunks[cuento_key]
         embeddings = torch.tensor(todos_embeddings[cuento_key]).to(embedder.device)
+        
+        # Embedding de la pregunta
         pregunta_emb = embedder.encode(pregunta, convert_to_tensor=True, device=embedder.device)
+        
+        # Similitud coseno
         cos_scores = util.cos_sim(pregunta_emb, embeddings)[0]
         top_results = torch.topk(cos_scores, k=min(TOP_K, len(chunks)))
         
+        # Filtrar por umbral de confianza
         fragmentos = []
         for score, idx in zip(top_results[0], top_results[1]):
             if score > UMBRAL_CONF:
                 fragmentos.append(chunks[idx])
+        
+        # Fallback: si no hay resultados, devolver el primer chunk
         return fragmentos if fragmentos else [chunks[0]]
     except Exception as e:
-        print(f"Error en búsqueda: {e}")
-        return [todos_chunks[cuento_key][0]]  # Fallback
+        print(f"⚠️ Error en búsqueda: {e}")
+        return [todos_chunks[cuento_key][0]]
 
-def generar_respuesta_llm(contexto, pregunta, personaje_key, tokenizer, modelo):
-    """Genera respuesta usando el chat template exacto como en tu Colab funcional"""
+def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
+    """Genera respuesta usando el LLM GGUF con prompt estructurado"""
     try:
         prompt_sistema = PROMPTS_PERSONAJES[personaje_key]["descripcion"]
         contexto_unido = "\n".join([f"[Fragmento {i+1}]: {c}" for i, c in enumerate(contexto)])
         
-        # ESTE ES EL FORMATO EXACTO QUE FUNCIONA EN TU COLAB
+        # Construir prompt con formato chat (compatible con Qwen2.5)
         messages = [
             {"role": "system", "content": prompt_sistema},
             {"role": "user", "content": f"Contexto del cuento:\n{contexto_unido}\n\nPregunta: {pregunta}"}
         ]
         
-        # Aplica el template como en tu Colab
-        text = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
+        # Aplicar template de chat manualmente (llama-cpp no lo hace automático)
+        prompt = ""
+        for msg in messages:
+            if msg["role"] == "system":
+                prompt += f"<|im_start|>system\n{msg['content']}<|im_end|>\n"
+            elif msg["role"] == "user":
+                prompt += f"<|im_start|>user\n{msg['content']}<|im_end|>\n"
+        prompt += "<|im_start|>assistant\n"
+        
+        # Generar respuesta con streaming habilitado
+        output = llm(
+            prompt,
+            max_tokens=250,           # Respuestas concisas para CPU
+            temperature=0.85,
+            top_p=0.9,
+            repeat_penalty=1.18,
+            stop=["<|im_end|>", "<|endoftext|>"],
+            stream=True               # ✅ Streaming para mejor UX
         )
         
-        # Tokeniza y genera como en tu Colab
-        inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=2048)
-        inputs = {k: v.to(modelo.device) for k, v in inputs.items()}
+        # Acumular tokens del stream
+        respuesta = ""
+        for chunk in output:
+            token = chunk["choices"][0]["text"]
+            respuesta += token
+            # Yield para streaming en Gradio (opcional, ver más abajo)
         
-        with torch.no_grad():
-            outputs = modelo.generate(
-                **inputs,
-                max_new_tokens=300,
-                temperature=0.85,
-                do_sample=True,
-                repetition_penalty=1.18,
-                pad_token_id=tokenizer.eos_token_id
-            )
-        
-        respuesta = tokenizer.decode(outputs[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True)
         return respuesta.strip()
+    
     except Exception as e:
-        print(f"Error en generación: {e}")
+        print(f"❌ Error en generación: {e}")
         return "I'm having trouble responding right now. Please try again."
 
 def inicializar_sistema():
+    """Inicializa todos los componentes: embedder, embeddings, LLM"""
+    print("🔄 Iniciando sistema...")
+    
     os.makedirs(CACHE_DIR, exist_ok=True)
+    
+    # 1. Cargar embedder (UNA SOLA VEZ)
+    print("📦 Cargando embedder...")
+    embedder = inicializar_embedder()
+    
+    # 2. Procesar todos los cuentos
+    print("📚 Procesando cuentos...")
     todos_chunks = {}
     todos_embeddings = {}
     
     for key in CUENTOS.keys():
         try:
-            chunks, embeddings = procesar_cuento(key)
+            chunks, embeddings = procesar_cuento(key, embedder)
             todos_chunks[key] = chunks
             todos_embeddings[key] = embeddings
+            print(f"✅ {key} listo")
         except Exception as e:
-            print(f"Error procesando {key}: {e}")
-            return {}, {}, None, None, None
+            print(f"❌ Error procesando {key}: {e}")
+            return None, None, None, None, None
     
-    tokenizer, modelo = inicializar_modelo()
-    if tokenizer is None:
-        return {}, {}, None, None, None
+    # 3. Cargar LLM
+    print("🤖 Cargando LLM GGUF...")
+    llm = inicializar_llm()
+    if llm is None:
+        print("❌ Fallo crítico: no se pudo cargar el LLM")
+        return None, None, None, None, None
     
-    embedder = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device='cpu')
-    
-    return todos_chunks, todos_embeddings, tokenizer, modelo, embedder
+    print("✨ Sistema listo!")
+    return todos_chunks, todos_embeddings, llm, embedder
 
-# Variables globales para el sistema
+# =============================================================================
+# 🌐 VARIABLES GLOBALES (se inicializan al importar el módulo)
+# =============================================================================
 try:
-    todos_chunks, todos_embeddings, tokenizer, modelo, embedder = inicializar_sistema()
-    if any(x is None for x in [todos_chunks, tokenizer, modelo, embedder]):
-        todos_chunks, todos_embeddings, tokenizer, modelo, embedder = {}, {}, None, None, None
-except:
-    todos_chunks, todos_embeddings, tokenizer, modelo, embedder = {}, {}, None, None, None
+    todos_chunks, todos_embeddings, llm, embedder = inicializar_sistema()
+    SISTEMA_LISTO = all(x is not None for x in [todos_chunks, llm, embedder])
+except Exception as e:
+    print(f"❌ Error crítico en inicialización: {e}")
+    todos_chunks, todos_embeddings, llm, embedder = {}, {}, None, None
+    SISTEMA_LISTO = False
+
+# =============================================================================
+# 💬 LÓGICA DE CHAT
+# =============================================================================
 
 def chat_con_personaje(personaje_key, user_input, history):
+    """Maneja la interacción de chat con recuperación y generación"""
     if not user_input.strip():
         return history
     
-    # Aseguramos que personaje_key sea string
+    # Normalizar personaje_key (Gradio a veces lo envía como tupla)
     if isinstance(personaje_key, tuple):
-        personaje_key = personaje_key[1]  # Extrae el key del dropdown
+        personaje_key = personaje_key[1]
     
-    if todos_chunks is None or not todos_chunks:
-        return history + [("System", "Model not loaded. Please refresh the page.")]
+    # Verificar que el sistema esté listo
+    if not SISTEMA_LISTO or llm is None:
+        return history + [("⚠️ System", "Model not loaded. Please refresh the page or wait for initialization.")]
     
     try:
-        fragmentos = buscar_fragmentos(user_input, personaje_key, todos_chunks, todos_embeddings, embedder)
-        respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, tokenizer, modelo)
+        # 1. Buscar fragmentos relevantes
+        fragmentos = buscar_fragmentos(
+            user_input, personaje_key, 
+            todos_chunks, todos_embeddings, embedder
+        )
         
+        # 2. Generar respuesta con el LLM
+        respuesta = generar_respuesta_llm(
+            fragmentos, user_input, personaje_key, llm
+        )
+        
+        # 3. Limpiar memoria después de cada generación
+        gc.collect()
+        
+        # 4. Actualizar historial
         new_history = history + [(user_input, respuesta)]
         return new_history
+        
     except Exception as e:
-        print(f"Error en chat: {e}")
-        return history + [(user_input, "Sorry, I encountered an error processing your request.")]
+        print(f"❌ Error en chat: {e}")
+        return history + [(user_input, "Sorry, I encountered an error. Please try again.")]
 
-with gr.Blocks(title="📚 Expanded Literature") as demo:
+# =============================================================================
+# 🎨 INTERFAZ GRADIO
+# =============================================================================
+
+with gr.Blocks(title="📚 Expanded Literature", theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 📚 Expanded Literature v1.0")
-    gr.Markdown("Converse with classic literature characters | Conversa con personajes clásicos")
+    gr.Markdown("*Converse with classic literature characters | Conversa con personajes clásicos*")
     
+    # Indicador de estado del sistema
+    status_box = gr.Textbox(
+        label="🔧 System Status", 
+        value="✅ Ready!" if SISTEMA_LISTO else "⏳ Loading models...",
+        interactive=False,
+        elem_classes=["status-box"]
+    )
+    
+    # Selector de personaje
+    character = gr.Dropdown(
+        choices=[
+            ("🔪 Tell-Tale Heart Narrator", "corazon_delator"),
+            ("🐈‍⬛ Black Cat Narrator", "gato_negro"), 
+            ("🪳 Gregor Samsa", "metamorfosis")
+        ],
+        label="🎭 Choose a Character / Elige un Personaje",
+        value="corazon_delator",
+        info="Each character has their own story context and personality"
+    )
+    
+    # Área de chat
+    chatbot = gr.Chatbot(
+        label="💬 Conversation",
+        height=400,
+        avatar_images=(None, "https://huggingface.co/front/assets/huggingface_logo.svg")
+    )
+    
+    # Input de mensaje
     with gr.Row():
-        character = gr.Dropdown(
-            choices=[
-                ("The Tell-Tale Heart Narrator", "corazon_delator"),
-                ("Black Cat Narrator", "gato_negro"), 
-                ("Gregor Samsa", "metamorfosis")
-            ],
-            label="Character / Personaje",
-            value="corazon_delator"
+        msg = gr.Textbox(
+            label="✍️ Your message / Tu mensaje",
+            placeholder="Ask anything in Spanish or English...",
+            scale=4,
+            container=False
         )
+        btn = gr.Button("➤ Send", variant="primary", scale=1)
     
-    chatbot = gr.Chatbot(label="Conversation / Conversación")
-    msg = gr.Textbox(label="Message in Spanish/English / Mensaje en Español/Inglés")
+    # Ejemplos de prompts
+    gr.Examples(
+        examples=[
+            "Why did you do it?",
+            "Do you feel remorse?",
+            "What happened after the story ended?",
+            "Describe how you feel right now",
+            "¿Te arrepientes de lo que hiciste?",
+            "¿Qué piensas de tu familia ahora?"
+        ],
+        inputs=msg,
+        label="💡 Try asking..."
+    )
     
-    def submit_message(msg, history, character):
-        if msg:
-            new_history = chat_con_personaje(character[1] if isinstance(character, tuple) else character, msg, history)
+    # Footer informativo
+    gr.Markdown("""
+    ---
+    *Demo experimental • Powered by Qwen2.5-1.5B-GGUF on CPU • 
+    Responses may take 10-30 seconds on first load • 
+    Characters are AI-generated and may hallucinate creatively*
+    """)
+    
+    # =====================================================================
+    # 🔗 CONEXIÓN DE EVENTOS
+    # =====================================================================
+    
+    def submit_message(user_msg, chat_history, selected_char):
+        """Wrapper para manejar el envío de mensajes"""
+        if not SISTEMA_LISTO:
+            return "", chat_history + [("⚠️ System", "Models still loading. Please wait ~60 seconds and refresh.")]
+        
+        if user_msg:
+            # Normalizar clave del personaje
+            char_key = selected_char[1] if isinstance(selected_char, tuple) else selected_char
+            # Llamar a la función de chat
+            new_history = chat_con_personaje(char_key, user_msg, chat_history)
             return "", new_history
-        return msg, history
+        return user_msg, chat_history
     
-    msg.submit(submit_message, [msg, chatbot, character], [msg, chatbot])
+    # Conectar eventos
+    msg.submit(
+        submit_message, 
+        inputs=[msg, chatbot, character], 
+        outputs=[msg, chatbot]
+    )
+    btn.click(
+        submit_message, 
+        inputs=[msg, chatbot, character], 
+        outputs=[msg, chatbot]
+    )
+    
+    # Actualizar estado al cargar la página
+    def check_status():
+        if SISTEMA_LISTO and llm is not None:
+            return "✅ Models loaded. Ready to chat! (CPU mode)"
+        return "⏳ Initializing... This may take 1-2 minutes on first load."
+    
+    demo.load(check_status, inputs=None, outputs=status_box)
+
+# =============================================================================
+# 🚀 PUNTO DE ENTRADA
+# =============================================================================
 
 if __name__ == "__main__":
-    demo.launch()
+    # ✅ Habilitar cola para manejar procesos largos en CPU
+    demo.queue(
+        max_size=20, 
+        default_concurrency_limit=1  # Evitar saturación en CPU
+    )
+    
+    # Lanzar servidor
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", 7860)),
+        debug=False
+    )
+
