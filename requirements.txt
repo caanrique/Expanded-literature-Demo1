@@ -1,6 +1,12 @@
-torch
-transformers
-sentence-transformers
-gradio
-accelerate
-tqdm
+# Core
+torch>=2.0.0
+sentence-transformers>=2.2.2
+gradio>=4.0.0
+
+# LLM ligero para CPU (GGUF)
+llama-cpp-python>=0.2.0
+
+# Utilidades
+numpy>=1.24.0
+pickle5>=0.0.12; python_version < '3.8'
+
