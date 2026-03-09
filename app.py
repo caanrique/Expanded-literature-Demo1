@@ -1,7 +1,6 @@
 import os
 import pickle
 import gc
-import time
 import torch
 from sentence_transformers import SentenceTransformer, util
 from llama_cpp import Llama
@@ -13,12 +12,14 @@ os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 # =============================================================================
 # 📚 DATOS DE LOS CUENTOS (Hardcodeados para la demo)
 # =============================================================================
+# IMPORTANTE: Copia aquí los textos completos de tu versión anterior.
+# Por razones de espacio, se muestran resumidos, pero debes usar los textos largos.
 CUENTOS = {
     "corazon_delator": {
         "titulo": "The Tell-Tale Heart",
         "autor": "Edgar Allan Poe",
         "personaje": "Narrator (paranoid killer)",
-        "texto": """Verdaderamente, estoy nervioso, muy, muy terriblemente nervioso, lo he estado y lo soy; pero ¿por qué decís que estoy loco? La enfermedad había agudizado mis sentidos, no los había destruido, no los había embotado. Sobre todo, el sentido del oído se había vuelto agudo. Oía todas las cosas del cielo y de la tierra. Oía muchas cosas del infierno. ¿Cómo, pues, estoy loco? Escuchen y observen con qué salud de mente, con qué serenidad puedo referirles toda la historia.
+        "texto": """Verdaderamente, estoy nervioso, muy, muy terriblemente nervioso, lo he estado y lo soy; pero ¿por qué decís que estoy loco?  La enfermedad había agudizado mis sentidos, no los había destruido, no los había embotado. Sobre todo, el sentido del oído se había vuelto agudo. Oía todas las cosas del cielo y de la tierra. Oía muchas cosas del infierno. ¿Cómo, pues, estoy loco? Escuchen y observen con qué salud de mente, con qué serenidad puedo referirles toda la historia.
 
 No puede atribuirse a una pasión. Amaba al viejo. Jamás me había hecho mal alguno. Jamás me había insultado. Yo no codiciaba su oro. Creo que era su ojo. Sí, era esto. Tenía el ojo de un buitre, un ojo azul pálido, con una película sobre él. Siempre que caía sobre mí, mi sangre se helaba; y así, poco a poco, muy gradualmente, decidí quitarme la vida del viejo y, de este modo, liberarme del ojo para siempre.
 
@@ -52,7 +53,7 @@ Y ahora, una nueva angustia se apoderó de mí: el sonido. ¡Oh, Dios! ¡Qué so
 
 No podía soportarlo más. Me sentía sofocado. Me sentía asfixiado. El sonido crecía sin cesar. Los agentes seguían charlando. ¡Pero yo sabía que ellos también lo oían! ¡Sabían todo! ¡Estaban fingiendo! ¡Se estaban burlando de mí!
 
-De repente, me puse en pie. Grité: "¡Basta! ¡Confieso todo! ¡Desgarrad las tablas! ¡Aquí, aquí! ¡Es su horrible corazón el que late!\""""
+De repente, me puse en pie. Grité: "¡Basta! ¡Confieso todo! ¡Desgarrad las tablas! ¡Aquí, aquí! ¡Es su horrible corazón el que late!\"""  
     },
     "gato_negro": {
         "titulo": "The Black Cat",
@@ -104,7 +105,7 @@ Durante algunos meses, me sentí aliviado de la tortura de esta alucinación. Un
         "titulo": "The Metamorphosis",
         "autor": "Franz Kafka",
         "personaje": "Gregor Samsa",
-        "texto": """Al despertar Gregorio Samsa una mañana, tras un sueño intranquilo, encontróse en su cema convertido en un monstruoso insecto. Hallábase echado de espaldas, duro como una coraza, y al alzar un poco la cabeza veía el vientre convexo y oscuro, surcado por curvadas callosidades, sobre cuya cima la colcha, a punto de escurrirse, se mantenía precariamente. Tenía muchas patas, penosamente delgadas en comparación con el grosor normal de sus demás miembros, que se agitaban sin concierto ante sus ojos.
+        "texto": """Al despertar Gregorio Samsa una mañana, tras un sueño intranquilo,  encontróse en su cema convertido en un monstruoso insecto. Hallábase echado de espaldas, duro como una coraza, y al alzar un poco la cabeza veía el vientre convexo y oscuro, surcado por curvadas callosidades, sobre cuya cima la colcha, a punto de escurrirse, se mantenía precariamente. Tenía muchas patas, penosamente delgadas en comparación con el grosor normal de sus demás miembros, que se agitaban sin concierto ante sus ojos.
 
 —¿Qué me ha ocurrido?—pensó. No era un sueño. Su habitación, una habitación corriente, aunque excesivamente pequeña, aparecía tranquila entre las cuatro paredes bien conocidas. Sobre la mesa, extendida y abierta, estaba la colección de paños de seda y muestras de lana que el agente de comercio Samsa había traído de su último viaje. El retrato de una dama con sombrero de piel, que Gregorio había recortado de una revista ilustrada y colocado en un marco dorado, pendía de la pared. Gregorio miró hacia la ventana; el tiempo gris (se oía llover sobre el techo de cinc) le hizo sentir una gran melancolía. ¿Qué ocurriría si continuara durmiendo un rato, olvidando todas estas necedades? Pensó que, si permanecía en la cama, no podría librarse de sus fantasías. Pero tal vez no era tan absurdo lo que le sucedía.
 
@@ -161,7 +162,7 @@ La familia de Gregorio se sintió aliviada. Por fin, estaban libres de la carga 
 Salieron de la casa y caminaron por el campo, disfrutando del sol y la libertad. Habían superado la tragedia, y ahora podían comenzar una nueva vida.
 
 Pero en el fondo de sus corazones, sabían que nunca olvidarían a Gregorio, el hijo que se había convertido en un monstruo."""
-    }
+} 
 }
 
 # =============================================================================
@@ -173,7 +174,6 @@ UMBRAL_CONF = 0.5
 CACHE_DIR = "cache_cuentos"
 
 # Modelo LLM GGUF (ligero y rápido para CPU)
-# Usamos Qwen2.5-1.5B en formato GGUF Q4_K_M (~1.2 GB RAM)
 LLM_REPO_ID = "Qwen/Qwen2.5-1.5B-Instruct-GGUF"
 LLM_FILENAME = "qwen2.5-1.5b-instruct-q4_k_m.gguf"
 
@@ -264,7 +264,7 @@ def get_llm():
             _llm = Llama.from_pretrained(
                 repo_id=LLM_REPO_ID,
                 filename=LLM_FILENAME,
-                n_ctx=2048,           # Reducimos contexto para ahorrar RAM (suficiente para fragmentos)
+                n_ctx=2048,           # Reducimos contexto para ahorrar RAM
                 n_threads=2,           # Usar 2 threads (CPU del Space gratuito)
                 n_gpu_layers=0,        # Forzar CPU-only
                 verbose=False,
@@ -294,8 +294,8 @@ def buscar_fragmentos(pregunta, cuento_key, embedder):
     """Busca los fragmentos más relevantes usando similitud coseno"""
     try:
         chunks, embeddings_np = get_cuento_data(cuento_key)
-        # Convertir a tensor en el dispositivo del embedder
-        embeddings = torch.tensor(embeddings_np).to(embedder.device)
+        # Convertir a tensor sin copia innecesaria (evita warning)
+        embeddings = torch.from_numpy(embeddings_np).to(embedder.device)
         
         # Embedding de la pregunta
         pregunta_emb = embedder.encode(pregunta, convert_to_tensor=True, device=embedder.device)
@@ -371,7 +371,7 @@ def chat_con_personaje(personaje_key, user_input, history):
     # Verificar que el LLM esté cargado (lo cargamos ahora si no lo está)
     llm_local = get_llm()
     if llm_local is None:
-        return history + [("⚠️ System", "LLM model failed to load. Please refresh the page or check logs.")]
+        return history + [{"role": "assistant", "content": "LLM model failed to load. Please refresh the page or check logs."}]
     
     embedder_local = get_embedder()
     
@@ -387,26 +387,29 @@ def chat_con_personaje(personaje_key, user_input, history):
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         
-        # 4. Actualizar historial
-        new_history = history + [(user_input, respuesta)]
+        # 4. Actualizar historial (formato de mensajes)
+        new_history = history + [
+            {"role": "user", "content": user_input},
+            {"role": "assistant", "content": respuesta}
+        ]
         return new_history
         
     except Exception as e:
         print(f"❌ Error en chat: {e}")
-        return history + [(user_input, "Sorry, I encountered an error. Please try again.")]
+        return history + [{"role": "assistant", "content": "Sorry, I encountered an error. Please try again."}]
 
 # =============================================================================
 # 🎨 INTERFAZ GRADIO
 # =============================================================================
 
 with gr.Blocks(title="📚 Expanded Literature", theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# 📚 Expanded Literature v1.1")
+    gr.Markdown("# 📚 Expanded Literature v1.3")
     gr.Markdown("*Converse with classic literature characters | Conversa con personajes clásicos*")
     
-    # Indicador de estado del sistema (se actualizará dinámicamente)
+    # Indicador de estado del sistema
     status_box = gr.Textbox(
         label="🔧 System Status", 
-        value="⏳ Initializing... (models will load on first message)",
+        value="✅ Interface ready. Send a message to load models.",
         interactive=False,
         elem_classes=["status-box"]
     )
@@ -423,10 +426,11 @@ with gr.Blocks(title="📚 Expanded Literature", theme=gr.themes.Soft()) as demo
         info="Each character has their own story context and personality"
     )
     
-    # Área de chat
+    # Área de chat (formato messages)
     chatbot = gr.Chatbot(
         label="💬 Conversation",
         height=400,
+        type="messages",  # <-- IMPORTANTE: formato de mensajes
         avatar_images=(None, "https://huggingface.co/front/assets/huggingface_logo.svg")
     )
     
@@ -492,7 +496,6 @@ with gr.Blocks(title="📚 Expanded Literature", theme=gr.themes.Soft()) as demo
     
     # Función para actualizar el estado cuando se carga la página
     def check_status():
-        # Solo mostramos que la interfaz está lista; los modelos se cargarán después
         return "✅ Interface ready. Send a message to load models."
     
     demo.load(check_status, inputs=None, outputs=status_box)
@@ -512,5 +515,5 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=int(os.environ.get("PORT", 7860)),
-        debug=False  # Cambiar a True para ver errores detallados
+        debug=False
     )
