@@ -2,7 +2,7 @@ gradio[oauth,mcp]==6.9.0
 sentence-transformers==3.0.1
 torch==2.5.1
 llama-cpp-python==0.2.90
-huggingface_hub==0.24.6
+huggingface_hub==0.36.0
 hf-transfer==0.1.8
 uvicorn>=0.14.0
 websockets>=10.4
