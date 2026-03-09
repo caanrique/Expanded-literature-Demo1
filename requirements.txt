@@ -1,10 +1,8 @@
-
-# requirements.txt FINAL (sin conflicto)
-torch>=2.0.0
-sentence-transformers>=2.2.2
-llama-cpp-python==0.2.78
-numpy>=1.24.0
-setuptools>=65.0.0
-wheel>=0.40.0
+gradio==4.44.1
+sentence-transformers==3.0.1
+torch==2.4.0
+llama-cpp-python==0.2.90
+huggingface_hub==0.24.6
+hf-transfer==0.1.8
 
 
