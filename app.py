@@ -347,13 +347,13 @@ def chat_con_personaje(personaje_key, user_input, history):
     
     llm_local = get_llm()
     if llm_local is None:
-        return history + [{"role": "assistant", "content": "LLM model failed to load. Please refresh."}]
+        return history + [{"role": "assistant", "content": "Error cargando el modelo. Intenta de nuevo."}]
     
     embedder_local = get_embedder()
     
     try:
         fragmentos = buscar_fragmentos(user_input, personaje_key, embedder_local)
-        respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, llm_local)
+        respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, llm_local, history)
         
         gc.collect()
         if torch.cuda.is_available():
@@ -366,7 +366,7 @@ def chat_con_personaje(personaje_key, user_input, history):
         return new_history
     except Exception as e:
         print(f"❌ Error en chat: {e}")
-        return history + [{"role": "assistant", "content": "Sorry, I encountered an error. Please try again."}]
+        return history + [{"role": "assistant", "content": "Lo siento, ocurrió un error. Intenta de nuevo."}]
 
 # =============================================================================
 # 🎨 INTERFAZ GRADIO (sin theme en Blocks, sin type en Chatbot)
