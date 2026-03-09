@@ -1,10 +1,14 @@
 import os
 import pickle
 import gc
+import time
 import torch
 from sentence_transformers import SentenceTransformer, util
 from llama_cpp import Llama
 import gradio as gr
+
+# Activar descarga rápida de Hugging Face (requiere hf-transfer instalado)
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
 # =============================================================================
 # 📚 DATOS DE LOS CUENTOS (Hardcodeados para la demo)
@@ -214,11 +218,13 @@ def procesar_cuento(cuento_key, embedder):
         try:
             with open(cache_file, 'rb') as f:
                 data = pickle.load(f)
+                print(f"📦 Cargando {cuento_key} desde caché")
                 return data['chunks'], data['embeddings']
-        except:
-            pass  # Si falla el cache, regenerar
+        except Exception as e:
+            print(f"⚠️ Error leyendo caché de {cuento_key}: {e}, regenerando...")
     
     # Procesar desde cero
+    print(f"⚙️ Procesando {cuento_key}...")
     chunks = dividir_en_chunks(cuento['texto'])
     embeddings = embedder.encode(chunks, convert_to_tensor=True, device='cpu')
     
@@ -228,36 +234,68 @@ def procesar_cuento(cuento_key, embedder):
             'chunks': chunks, 
             'embeddings': embeddings.cpu().numpy()
         }, f)
+    print(f"✅ {cuento_key} procesado y cacheado")
     
     return chunks, embeddings
 
-def inicializar_embedder():
-    """Carga el modelo de embeddings una sola vez"""
-    return SentenceTransformer(EMBEDDER_NAME, device='cpu', cache_folder='./cache_embedder')
+# =============================================================================
+# 🌐 VARIABLES GLOBALES (inicialmente vacías, se cargan bajo demanda)
+# =============================================================================
+_embedder = None
+_llm = None
+_todos_chunks = {}
+_todos_embeddings = {}
 
-def inicializar_llm():
-    """Carga el modelo LLM en formato GGUF optimizado para CPU"""
-    try:
-        # Descargar y cargar modelo GGUF desde HuggingFace
-        llm = Llama.from_pretrained(
-            repo_id=LLM_REPO_ID,
-            filename=LLM_FILENAME,
-            n_ctx=4096,           # Context window
-            n_threads=2,          # Usar 2 threads (CPU del Space gratuito)
-            n_gpu_layers=0,       # Forzar CPU-only
-            verbose=False,
-            cache_dir='./cache_llm'
-        )
-        return llm
-    except Exception as e:
-        print(f"❌ Error cargando LLM: {e}")
-        return None
+def get_embedder():
+    """Carga el modelo de embeddings una sola vez (lazy)"""
+    global _embedder
+    if _embedder is None:
+        print("🔄 Cargando embedder (puede tomar unos segundos)...")
+        _embedder = SentenceTransformer(EMBEDDER_NAME, device='cpu', cache_folder='./cache_embedder')
+        print("✅ Embedder listo")
+    return _embedder
 
-def buscar_fragmentos(pregunta, cuento_key, todos_chunks, todos_embeddings, embedder):
+def get_llm():
+    """Carga el modelo LLM una sola vez (lazy)"""
+    global _llm
+    if _llm is None:
+        print("🔄 Cargando LLM (esto puede tomar 1-2 minutos la primera vez)...")
+        try:
+            _llm = Llama.from_pretrained(
+                repo_id=LLM_REPO_ID,
+                filename=LLM_FILENAME,
+                n_ctx=2048,           # Reducimos contexto para ahorrar RAM (suficiente para fragmentos)
+                n_threads=2,           # Usar 2 threads (CPU del Space gratuito)
+                n_gpu_layers=0,        # Forzar CPU-only
+                verbose=False,
+                cache_dir='./cache_llm'
+            )
+            print("✅ LLM listo")
+        except Exception as e:
+            print(f"❌ Error cargando LLM: {e}")
+            _llm = None
+    return _llm
+
+def get_cuento_data(cuento_key):
+    """Obtiene chunks y embeddings de un cuento, procesándolo si es necesario"""
+    global _todos_chunks, _todos_embeddings
+    if cuento_key not in _todos_chunks:
+        embedder = get_embedder()
+        chunks, embeddings = procesar_cuento(cuento_key, embedder)
+        _todos_chunks[cuento_key] = chunks
+        _todos_embeddings[cuento_key] = embeddings
+    return _todos_chunks[cuento_key], _todos_embeddings[cuento_key]
+
+# =============================================================================
+# 🔍 BÚSQUEDA Y GENERACIÓN
+# =============================================================================
+
+def buscar_fragmentos(pregunta, cuento_key, embedder):
     """Busca los fragmentos más relevantes usando similitud coseno"""
     try:
-        chunks = todos_chunks[cuento_key]
-        embeddings = torch.tensor(todos_embeddings[cuento_key]).to(embedder.device)
+        chunks, embeddings_np = get_cuento_data(cuento_key)
+        # Convertir a tensor en el dispositivo del embedder
+        embeddings = torch.tensor(embeddings_np).to(embedder.device)
         
         # Embedding de la pregunta
         pregunta_emb = embedder.encode(pregunta, convert_to_tensor=True, device=embedder.device)
@@ -273,10 +311,12 @@ def buscar_fragmentos(pregunta, cuento_key, todos_chunks, todos_embeddings, embe
                 fragmentos.append(chunks[idx])
         
         # Fallback: si no hay resultados, devolver el primer chunk
-        return fragmentos if fragmentos else [chunks[0]]
+        if not fragmentos:
+            fragmentos = [chunks[0]]
+        return fragmentos
     except Exception as e:
         print(f"⚠️ Error en búsqueda: {e}")
-        return [todos_chunks[cuento_key][0]]
+        return [CUENTOS[cuento_key]['texto'][:500]]  # fallback extremo
 
 def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
     """Genera respuesta usando el LLM GGUF con prompt estructurado"""
@@ -290,7 +330,6 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
             {"role": "user", "content": f"Contexto del cuento:\n{contexto_unido}\n\nPregunta: {pregunta}"}
         ]
         
-        # Aplicar template de chat manualmente (llama-cpp no lo hace automático)
         prompt = ""
         for msg in messages:
             if msg["role"] == "system":
@@ -299,75 +338,22 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
                 prompt += f"<|im_start|>user\n{msg['content']}<|im_end|>\n"
         prompt += "<|im_start|>assistant\n"
         
-        # Generar respuesta con streaming habilitado
+        # Generar respuesta (sin streaming para simplificar)
         output = llm(
             prompt,
-            max_tokens=250,           # Respuestas concisas para CPU
+            max_tokens=250,
             temperature=0.85,
             top_p=0.9,
             repeat_penalty=1.18,
             stop=["<|im_end|>", "<|endoftext|>"],
-            stream=True               # ✅ Streaming para mejor UX
+            stream=False
         )
-        
-        # Acumular tokens del stream
-        respuesta = ""
-        for chunk in output:
-            token = chunk["choices"][0]["text"]
-            respuesta += token
-            # Yield para streaming en Gradio (opcional, ver más abajo)
-        
-        return respuesta.strip()
+        respuesta = output["choices"][0]["text"].strip()
+        return respuesta
     
     except Exception as e:
         print(f"❌ Error en generación: {e}")
         return "I'm having trouble responding right now. Please try again."
-
-def inicializar_sistema():
-    """Inicializa todos los componentes: embedder, embeddings, LLM"""
-    print("🔄 Iniciando sistema...")
-    
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    
-    # 1. Cargar embedder (UNA SOLA VEZ)
-    print("📦 Cargando embedder...")
-    embedder = inicializar_embedder()
-    
-    # 2. Procesar todos los cuentos
-    print("📚 Procesando cuentos...")
-    todos_chunks = {}
-    todos_embeddings = {}
-    
-    for key in CUENTOS.keys():
-        try:
-            chunks, embeddings = procesar_cuento(key, embedder)
-            todos_chunks[key] = chunks
-            todos_embeddings[key] = embeddings
-            print(f"✅ {key} listo")
-        except Exception as e:
-            print(f"❌ Error procesando {key}: {e}")
-            return None, None, None, None, None
-    
-    # 3. Cargar LLM
-    print("🤖 Cargando LLM GGUF...")
-    llm = inicializar_llm()
-    if llm is None:
-        print("❌ Fallo crítico: no se pudo cargar el LLM")
-        return None, None, None, None, None
-    
-    print("✨ Sistema listo!")
-    return todos_chunks, todos_embeddings, llm, embedder
-
-# =============================================================================
-# 🌐 VARIABLES GLOBALES (se inicializan al importar el módulo)
-# =============================================================================
-try:
-    todos_chunks, todos_embeddings, llm, embedder = inicializar_sistema()
-    SISTEMA_LISTO = all(x is not None for x in [todos_chunks, llm, embedder])
-except Exception as e:
-    print(f"❌ Error crítico en inicialización: {e}")
-    todos_chunks, todos_embeddings, llm, embedder = {}, {}, None, None
-    SISTEMA_LISTO = False
 
 # =============================================================================
 # 💬 LÓGICA DE CHAT
@@ -382,24 +368,24 @@ def chat_con_personaje(personaje_key, user_input, history):
     if isinstance(personaje_key, tuple):
         personaje_key = personaje_key[1]
     
-    # Verificar que el sistema esté listo
-    if not SISTEMA_LISTO or llm is None:
-        return history + [("⚠️ System", "Model not loaded. Please refresh the page or wait for initialization.")]
+    # Verificar que el LLM esté cargado (lo cargamos ahora si no lo está)
+    llm_local = get_llm()
+    if llm_local is None:
+        return history + [("⚠️ System", "LLM model failed to load. Please refresh the page or check logs.")]
+    
+    embedder_local = get_embedder()
     
     try:
         # 1. Buscar fragmentos relevantes
-        fragmentos = buscar_fragmentos(
-            user_input, personaje_key, 
-            todos_chunks, todos_embeddings, embedder
-        )
+        fragmentos = buscar_fragmentos(user_input, personaje_key, embedder_local)
         
         # 2. Generar respuesta con el LLM
-        respuesta = generar_respuesta_llm(
-            fragmentos, user_input, personaje_key, llm
-        )
+        respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, llm_local)
         
         # 3. Limpiar memoria después de cada generación
         gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         
         # 4. Actualizar historial
         new_history = history + [(user_input, respuesta)]
@@ -414,13 +400,13 @@ def chat_con_personaje(personaje_key, user_input, history):
 # =============================================================================
 
 with gr.Blocks(title="📚 Expanded Literature", theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# 📚 Expanded Literature v1.0")
+    gr.Markdown("# 📚 Expanded Literature v1.1")
     gr.Markdown("*Converse with classic literature characters | Conversa con personajes clásicos*")
     
-    # Indicador de estado del sistema
+    # Indicador de estado del sistema (se actualizará dinámicamente)
     status_box = gr.Textbox(
         label="🔧 System Status", 
-        value="✅ Ready!" if SISTEMA_LISTO else "⏳ Loading models...",
+        value="⏳ Initializing... (models will load on first message)",
         interactive=False,
         elem_classes=["status-box"]
     )
@@ -482,16 +468,15 @@ with gr.Blocks(title="📚 Expanded Literature", theme=gr.themes.Soft()) as demo
     
     def submit_message(user_msg, chat_history, selected_char):
         """Wrapper para manejar el envío de mensajes"""
-        if not SISTEMA_LISTO:
-            return "", chat_history + [("⚠️ System", "Models still loading. Please wait ~60 seconds and refresh.")]
+        # Normalizar clave del personaje
+        char_key = selected_char[1] if isinstance(selected_char, tuple) else selected_char
         
-        if user_msg:
-            # Normalizar clave del personaje
-            char_key = selected_char[1] if isinstance(selected_char, tuple) else selected_char
-            # Llamar a la función de chat
-            new_history = chat_con_personaje(char_key, user_msg, chat_history)
-            return "", new_history
-        return user_msg, chat_history
+        if not user_msg:
+            return user_msg, chat_history
+        
+        # Llamar a la función de chat (que carga modelos bajo demanda)
+        new_history = chat_con_personaje(char_key, user_msg, chat_history)
+        return "", new_history
     
     # Conectar eventos
     msg.submit(
@@ -505,11 +490,10 @@ with gr.Blocks(title="📚 Expanded Literature", theme=gr.themes.Soft()) as demo
         outputs=[msg, chatbot]
     )
     
-    # Actualizar estado al cargar la página
+    # Función para actualizar el estado cuando se carga la página
     def check_status():
-        if SISTEMA_LISTO and llm is not None:
-            return "✅ Models loaded. Ready to chat! (CPU mode)"
-        return "⏳ Initializing... This may take 1-2 minutes on first load."
+        # Solo mostramos que la interfaz está lista; los modelos se cargarán después
+        return "✅ Interface ready. Send a message to load models."
     
     demo.load(check_status, inputs=None, outputs=status_box)
 
@@ -528,6 +512,5 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=int(os.environ.get("PORT", 7860)),
-        debug=False
+        debug=False  # Cambiar a True para ver errores detallados
     )
-
