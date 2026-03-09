@@ -1,12 +1,14 @@
-# Core
+# requirements.txt optimizado para HF Spaces
 torch>=2.0.0
 sentence-transformers>=2.2.2
-gradio>=4.0.0
-
-# LLM ligero para CPU (GGUF)
-llama-cpp-python>=0.2.0
-
-# Utilidades
+gradio==4.44.0
 numpy>=1.24.0
-pickle5>=0.0.12; python_version < '3.8'
+
+# Versión específica de llama-cpp-python que compila mejor en Spaces
+llama-cpp-python==0.2.78
+
+# Herramientas de compilación (a veces necesarias)
+setuptools>=65.0.0
+wheel>=0.40.0
+
 
