@@ -6,20 +6,18 @@ from sentence_transformers import SentenceTransformer, util
 from llama_cpp import Llama
 import gradio as gr
 
-# Activar descarga rápida de Hugging Face (requiere hf-transfer instalado)
+# Activar descarga rápida
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
 # =============================================================================
-# 📚 DATOS DE LOS CUENTOS (Hardcodeados para la demo)
+# 📚 DATOS DE LOS CUENTOS (mismos textos, no los repito por brevedad)
 # =============================================================================
-# IMPORTANTE: Copia aquí los textos completos de tu versión anterior.
-# Por razones de espacio, se muestran resumidos, pero debes usar los textos largos.
 CUENTOS = {
     "corazon_delator": {
         "titulo": "The Tell-Tale Heart",
         "autor": "Edgar Allan Poe",
         "personaje": "Narrator (paranoid killer)",
-        "texto": """Verdaderamente, estoy nervioso, muy, muy terriblemente nervioso, lo he estado y lo soy; pero ¿por qué decís que estoy loco?  La enfermedad había agudizado mis sentidos, no los había destruido, no los había embotado. Sobre todo, el sentido del oído se había vuelto agudo. Oía todas las cosas del cielo y de la tierra. Oía muchas cosas del infierno. ¿Cómo, pues, estoy loco? Escuchen y observen con qué salud de mente, con qué serenidad puedo referirles toda la historia.
+        "texto": """Verdaderamente, estoy nervioso, muy, muy terriblemente nervioso, lo he estado y lo soy; pero ¿por qué decís que estoy loco? La enfermedad había agudizado mis sentidos, no los había destruido, no los había embotado. Sobre todo, el sentido del oído se había vuelto agudo. Oía todas las cosas del cielo y de la tierra. Oía muchas cosas del infierno. ¿Cómo, pues, estoy loco? Escuchen y observen con qué salud de mente, con qué serenidad puedo referirles toda la historia.
 
 No puede atribuirse a una pasión. Amaba al viejo. Jamás me había hecho mal alguno. Jamás me había insultado. Yo no codiciaba su oro. Creo que era su ojo. Sí, era esto. Tenía el ojo de un buitre, un ojo azul pálido, con una película sobre él. Siempre que caía sobre mí, mi sangre se helaba; y así, poco a poco, muy gradualmente, decidí quitarme la vida del viejo y, de este modo, liberarme del ojo para siempre.
 
@@ -53,7 +51,7 @@ Y ahora, una nueva angustia se apoderó de mí: el sonido. ¡Oh, Dios! ¡Qué so
 
 No podía soportarlo más. Me sentía sofocado. Me sentía asfixiado. El sonido crecía sin cesar. Los agentes seguían charlando. ¡Pero yo sabía que ellos también lo oían! ¡Sabían todo! ¡Estaban fingiendo! ¡Se estaban burlando de mí!
 
-De repente, me puse en pie. Grité: "¡Basta! ¡Confieso todo! ¡Desgarrad las tablas! ¡Aquí, aquí! ¡Es su horrible corazón el que late!\"""  
+De repente, me puse en pie. Grité: "¡Basta! ¡Confieso todo! ¡Desgarrad las tablas! ¡Aquí, aquí! ¡Es su horrible corazón el que late!"""   
     },
     "gato_negro": {
         "titulo": "The Black Cat",
@@ -105,7 +103,7 @@ Durante algunos meses, me sentí aliviado de la tortura de esta alucinación. Un
         "titulo": "The Metamorphosis",
         "autor": "Franz Kafka",
         "personaje": "Gregor Samsa",
-        "texto": """Al despertar Gregorio Samsa una mañana, tras un sueño intranquilo,  encontróse en su cema convertido en un monstruoso insecto. Hallábase echado de espaldas, duro como una coraza, y al alzar un poco la cabeza veía el vientre convexo y oscuro, surcado por curvadas callosidades, sobre cuya cima la colcha, a punto de escurrirse, se mantenía precariamente. Tenía muchas patas, penosamente delgadas en comparación con el grosor normal de sus demás miembros, que se agitaban sin concierto ante sus ojos.
+        "texto": """Al despertar Gregorio Samsa una mañana, tras un sueño intranquilo, encontróse en su cema convertido en un monstruoso insecto. Hallábase echado de espaldas, duro como una coraza, y al alzar un poco la cabeza veía el vientre convexo y oscuro, surcado por curvadas callosidades, sobre cuya cima la colcha, a punto de escurrirse, se mantenía precariamente. Tenía muchas patas, penosamente delgadas en comparación con el grosor normal de sus demás miembros, que se agitaban sin concierto ante sus ojos.
 
 —¿Qué me ha ocurrido?—pensó. No era un sueño. Su habitación, una habitación corriente, aunque excesivamente pequeña, aparecía tranquila entre las cuatro paredes bien conocidas. Sobre la mesa, extendida y abierta, estaba la colección de paños de seda y muestras de lana que el agente de comercio Samsa había traído de su último viaje. El retrato de una dama con sombrero de piel, que Gregorio había recortado de una revista ilustrada y colocado en un marco dorado, pendía de la pared. Gregorio miró hacia la ventana; el tiempo gris (se oía llover sobre el techo de cinc) le hizo sentir una gran melancolía. ¿Qué ocurriría si continuara durmiendo un rato, olvidando todas estas necedades? Pensó que, si permanecía en la cama, no podría librarse de sus fantasías. Pero tal vez no era tan absurdo lo que le sucedía.
 
@@ -162,25 +160,25 @@ La familia de Gregorio se sintió aliviada. Por fin, estaban libres de la carga 
 Salieron de la casa y caminaron por el campo, disfrutando del sol y la libertad. Habían superado la tragedia, y ahora podían comenzar una nueva vida.
 
 Pero en el fondo de sus corazones, sabían que nunca olvidarían a Gregorio, el hijo que se había convertido en un monstruo."""
-} 
+    }
 }
 
 # =============================================================================
-# ⚙️ CONFIGURACIÓN GLOBAL
+# ⚙️ CONFIGURACIÓN GLOBAL (optimizada para memoria)
 # =============================================================================
-CHUNK_SIZE = 150
-TOP_K = 3
+CHUNK_SIZE = 100          # Reducido para ahorrar memoria
+TOP_K = 2                  # Menos fragmentos
 UMBRAL_CONF = 0.5
 CACHE_DIR = "cache_cuentos"
 
-# Modelo LLM GGUF (ligero y rápido para CPU)
-LLM_REPO_ID = "Qwen/Qwen2.5-1.5B-Instruct-GGUF"
-LLM_FILENAME = "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+# Modelo LLM más pequeño: 0.5B en lugar de 1.5B
+LLM_REPO_ID = "Qwen/Qwen2.5-0.5B-Instruct-GGUF"
+LLM_FILENAME = "qwen2.5-0.5b-instruct-q4_k_m.gguf"
 
-# Embedder para búsqueda semántica (multilingüe, ligero)
+# Embedder (se mantiene, es ligero)
 EMBEDDER_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
 
-# Prompts de personaje (en inglés para mejor rendimiento del modelo)
+# Prompts de personaje (igual)
 PROMPTS_PERSONAJES = {
     "corazon_delator": {
         "descripcion": "You are the narrator from 'The Tell-Tale Heart' by Edgar Allan Poe. You are a paranoid killer who murdered an old man because of his 'vulture eye'. Speak nervously, in short repetitive phrases. You hear heartbeats others can't hear. Never admit you're insane, but your speech proves it. Maintain character always."
@@ -194,11 +192,9 @@ PROMPTS_PERSONAJES = {
 }
 
 # =============================================================================
-# 🧩 FUNCIONES AUXILIARES
+# 🧩 FUNCIONES AUXILIARES (sin cambios)
 # =============================================================================
-
-def dividir_en_chunks(texto, chunk_size=CHUNK_SIZE, overlap=30):
-    """Divide el texto en chunks solapados para mejor recuperación"""
+def dividir_en_chunks(texto, chunk_size=CHUNK_SIZE, overlap=20):
     palabras = texto.split()
     chunks = []
     for i in range(0, len(palabras), chunk_size - overlap):
@@ -208,12 +204,10 @@ def dividir_en_chunks(texto, chunk_size=CHUNK_SIZE, overlap=30):
     return chunks
 
 def procesar_cuento(cuento_key, embedder):
-    """Procesa un cuento: divide en chunks y genera embeddings (con cache)"""
     cuento = CUENTOS[cuento_key]
     cache_file = os.path.join(CACHE_DIR, f"{cuento_key}.pkl")
     os.makedirs(CACHE_DIR, exist_ok=True)
     
-    # Intentar cargar desde cache
     if os.path.exists(cache_file):
         try:
             with open(cache_file, 'rb') as f:
@@ -221,25 +215,22 @@ def procesar_cuento(cuento_key, embedder):
                 print(f"📦 Cargando {cuento_key} desde caché")
                 return data['chunks'], data['embeddings']
         except Exception as e:
-            print(f"⚠️ Error leyendo caché de {cuento_key}: {e}, regenerando...")
+            print(f"⚠️ Error leyendo caché: {e}, regenerando...")
     
-    # Procesar desde cero
     print(f"⚙️ Procesando {cuento_key}...")
     chunks = dividir_en_chunks(cuento['texto'])
     embeddings = embedder.encode(chunks, convert_to_tensor=True, device='cpu')
     
-    # Guardar en cache
     with open(cache_file, 'wb') as f:
         pickle.dump({
             'chunks': chunks, 
             'embeddings': embeddings.cpu().numpy()
         }, f)
-    print(f"✅ {cuento_key} procesado y cacheado")
-    
+    print(f"✅ {cuento_key} cacheado")
     return chunks, embeddings
 
 # =============================================================================
-# 🌐 VARIABLES GLOBALES (inicialmente vacías, se cargan bajo demanda)
+# 🌐 VARIABLES GLOBALES (lazy loading)
 # =============================================================================
 _embedder = None
 _llm = None
@@ -247,26 +238,24 @@ _todos_chunks = {}
 _todos_embeddings = {}
 
 def get_embedder():
-    """Carga el modelo de embeddings una sola vez (lazy)"""
     global _embedder
     if _embedder is None:
-        print("🔄 Cargando embedder (puede tomar unos segundos)...")
+        print("🔄 Cargando embedder...")
         _embedder = SentenceTransformer(EMBEDDER_NAME, device='cpu', cache_folder='./cache_embedder')
         print("✅ Embedder listo")
     return _embedder
 
 def get_llm():
-    """Carga el modelo LLM una sola vez (lazy)"""
     global _llm
     if _llm is None:
-        print("🔄 Cargando LLM (esto puede tomar 1-2 minutos la primera vez)...")
+        print("🔄 Cargando LLM (0.5B, más ligero)...")
         try:
             _llm = Llama.from_pretrained(
                 repo_id=LLM_REPO_ID,
                 filename=LLM_FILENAME,
-                n_ctx=2048,           # Reducimos contexto para ahorrar RAM
-                n_threads=2,           # Usar 2 threads (CPU del Space gratuito)
-                n_gpu_layers=0,        # Forzar CPU-only
+                n_ctx=1024,           # Contexto reducido
+                n_threads=1,           # Un solo hilo para menos memoria
+                n_gpu_layers=0,
                 verbose=False,
                 cache_dir='./cache_llm'
             )
@@ -277,7 +266,6 @@ def get_llm():
     return _llm
 
 def get_cuento_data(cuento_key):
-    """Obtiene chunks y embeddings de un cuento, procesándolo si es necesario"""
     global _todos_chunks, _todos_embeddings
     if cuento_key not in _todos_chunks:
         embedder = get_embedder()
@@ -287,49 +275,30 @@ def get_cuento_data(cuento_key):
     return _todos_chunks[cuento_key], _todos_embeddings[cuento_key]
 
 # =============================================================================
-# 🔍 BÚSQUEDA Y GENERACIÓN
+# 🔍 BÚSQUEDA Y GENERACIÓN (con from_numpy corregido)
 # =============================================================================
-
 def buscar_fragmentos(pregunta, cuento_key, embedder):
-    """Busca los fragmentos más relevantes usando similitud coseno"""
     try:
         chunks, embeddings_np = get_cuento_data(cuento_key)
-        # Convertir a tensor sin copia innecesaria (evita warning)
         embeddings = torch.from_numpy(embeddings_np).to(embedder.device)
-        
-        # Embedding de la pregunta
         pregunta_emb = embedder.encode(pregunta, convert_to_tensor=True, device=embedder.device)
-        
-        # Similitud coseno
         cos_scores = util.cos_sim(pregunta_emb, embeddings)[0]
         top_results = torch.topk(cos_scores, k=min(TOP_K, len(chunks)))
-        
-        # Filtrar por umbral de confianza
-        fragmentos = []
-        for score, idx in zip(top_results[0], top_results[1]):
-            if score > UMBRAL_CONF:
-                fragmentos.append(chunks[idx])
-        
-        # Fallback: si no hay resultados, devolver el primer chunk
-        if not fragmentos:
-            fragmentos = [chunks[0]]
-        return fragmentos
+        fragmentos = [chunks[idx] for score, idx in zip(top_results[0], top_results[1]) if score > UMBRAL_CONF]
+        return fragmentos if fragmentos else [chunks[0]]
     except Exception as e:
         print(f"⚠️ Error en búsqueda: {e}")
-        return [CUENTOS[cuento_key]['texto'][:500]]  # fallback extremo
+        return [CUENTOS[cuento_key]['texto'][:500]]
 
 def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
-    """Genera respuesta usando el LLM GGUF con prompt estructurado"""
     try:
         prompt_sistema = PROMPTS_PERSONAJES[personaje_key]["descripcion"]
         contexto_unido = "\n".join([f"[Fragmento {i+1}]: {c}" for i, c in enumerate(contexto)])
         
-        # Construir prompt con formato chat (compatible con Qwen2.5)
         messages = [
             {"role": "system", "content": prompt_sistema},
             {"role": "user", "content": f"Contexto del cuento:\n{contexto_unido}\n\nPregunta: {pregunta}"}
         ]
-        
         prompt = ""
         for msg in messages:
             if msg["role"] == "system":
@@ -338,10 +307,9 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
                 prompt += f"<|im_start|>user\n{msg['content']}<|im_end|>\n"
         prompt += "<|im_start|>assistant\n"
         
-        # Generar respuesta (sin streaming para simplificar)
         output = llm(
             prompt,
-            max_tokens=250,
+            max_tokens=200,            # Respuestas más cortas
             temperature=0.85,
             top_p=0.9,
             repeat_penalty=1.18,
@@ -350,7 +318,6 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
         )
         respuesta = output["choices"][0]["text"].strip()
         return respuesta
-    
     except Exception as e:
         print(f"❌ Error en generación: {e}")
         return "I'm having trouble responding right now. Please try again."
@@ -358,42 +325,33 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm):
 # =============================================================================
 # 💬 LÓGICA DE CHAT
 # =============================================================================
-
 def chat_con_personaje(personaje_key, user_input, history):
-    """Maneja la interacción de chat con recuperación y generación"""
     if not user_input.strip():
         return history
     
-    # Normalizar personaje_key (Gradio a veces lo envía como tupla)
     if isinstance(personaje_key, tuple):
         personaje_key = personaje_key[1]
     
-    # Verificar que el LLM esté cargado (lo cargamos ahora si no lo está)
     llm_local = get_llm()
     if llm_local is None:
-        return history + [{"role": "assistant", "content": "LLM model failed to load. Please refresh the page or check logs."}]
+        return history + [{"role": "assistant", "content": "LLM model failed to load. Please refresh."}]
     
     embedder_local = get_embedder()
     
     try:
-        # 1. Buscar fragmentos relevantes
         fragmentos = buscar_fragmentos(user_input, personaje_key, embedder_local)
-        
-        # 2. Generar respuesta con el LLM
         respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, llm_local)
         
-        # 3. Limpiar memoria después de cada generación
+        # Liberar memoria
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         
-        # 4. Actualizar historial (formato de mensajes)
         new_history = history + [
             {"role": "user", "content": user_input},
             {"role": "assistant", "content": respuesta}
         ]
         return new_history
-        
     except Exception as e:
         print(f"❌ Error en chat: {e}")
         return history + [{"role": "assistant", "content": "Sorry, I encountered an error. Please try again."}]
@@ -401,50 +359,42 @@ def chat_con_personaje(personaje_key, user_input, history):
 # =============================================================================
 # 🎨 INTERFAZ GRADIO
 # =============================================================================
-
-with gr.Blocks(title="📚 Expanded Literature", theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# 📚 Expanded Literature v1.3")
+with gr.Blocks(title="📚 Expanded Literature (Ligero)", theme=gr.themes.Soft()) as demo:
+    gr.Markdown("# 📚 Expanded Literature v1.4 (Modo Ligero)")
     gr.Markdown("*Converse with classic literature characters | Conversa con personajes clásicos*")
     
-    # Indicador de estado del sistema
     status_box = gr.Textbox(
         label="🔧 System Status", 
-        value="✅ Interface ready. Send a message to load models.",
-        interactive=False,
-        elem_classes=["status-box"]
+        value="✅ Interface ready. Send a message to load models (modelo 0.5B).",
+        interactive=False
     )
     
-    # Selector de personaje
     character = gr.Dropdown(
         choices=[
             ("🔪 Tell-Tale Heart Narrator", "corazon_delator"),
             ("🐈‍⬛ Black Cat Narrator", "gato_negro"), 
             ("🪳 Gregor Samsa", "metamorfosis")
         ],
-        label="🎭 Choose a Character / Elige un Personaje",
-        value="corazon_delator",
-        info="Each character has their own story context and personality"
+        label="🎭 Choose a Character",
+        value="corazon_delator"
     )
     
-    # Área de chat (formato messages)
     chatbot = gr.Chatbot(
         label="💬 Conversation",
         height=400,
-        type="messages",  # <-- IMPORTANTE: formato de mensajes
+        type="messages",
         avatar_images=(None, "https://huggingface.co/front/assets/huggingface_logo.svg")
     )
     
-    # Input de mensaje
     with gr.Row():
         msg = gr.Textbox(
-            label="✍️ Your message / Tu mensaje",
+            label="✍️ Your message",
             placeholder="Ask anything in Spanish or English...",
             scale=4,
             container=False
         )
         btn = gr.Button("➤ Send", variant="primary", scale=1)
     
-    # Ejemplos de prompts
     gr.Examples(
         examples=[
             "Why did you do it?",
@@ -454,66 +404,27 @@ with gr.Blocks(title="📚 Expanded Literature", theme=gr.themes.Soft()) as demo
             "¿Te arrepientes de lo que hiciste?",
             "¿Qué piensas de tu familia ahora?"
         ],
-        inputs=msg,
-        label="💡 Try asking..."
+        inputs=msg
     )
     
-    # Footer informativo
     gr.Markdown("""
     ---
-    *Demo experimental • Powered by Qwen2.5-1.5B-GGUF on CPU • 
-    Responses may take 10-30 seconds on first load • 
-    Characters are AI-generated and may hallucinate creatively*
+    *Demo experimental • Modelo Qwen2.5-0.5B (más ligero) • 
+    Respuestas más rápidas y menor consumo de RAM*
     """)
     
-    # =====================================================================
-    # 🔗 CONEXIÓN DE EVENTOS
-    # =====================================================================
-    
     def submit_message(user_msg, chat_history, selected_char):
-        """Wrapper para manejar el envío de mensajes"""
-        # Normalizar clave del personaje
         char_key = selected_char[1] if isinstance(selected_char, tuple) else selected_char
-        
         if not user_msg:
             return user_msg, chat_history
-        
-        # Llamar a la función de chat (que carga modelos bajo demanda)
         new_history = chat_con_personaje(char_key, user_msg, chat_history)
         return "", new_history
     
-    # Conectar eventos
-    msg.submit(
-        submit_message, 
-        inputs=[msg, chatbot, character], 
-        outputs=[msg, chatbot]
-    )
-    btn.click(
-        submit_message, 
-        inputs=[msg, chatbot, character], 
-        outputs=[msg, chatbot]
-    )
+    msg.submit(submit_message, inputs=[msg, chatbot, character], outputs=[msg, chatbot])
+    btn.click(submit_message, inputs=[msg, chatbot, character], outputs=[msg, chatbot])
     
-    # Función para actualizar el estado cuando se carga la página
-    def check_status():
-        return "✅ Interface ready. Send a message to load models."
-    
-    demo.load(check_status, inputs=None, outputs=status_box)
-
-# =============================================================================
-# 🚀 PUNTO DE ENTRADA
-# =============================================================================
+    demo.load(lambda: "✅ Interface ready. Send a message to load models (modelo 0.5B).", inputs=None, outputs=status_box)
 
 if __name__ == "__main__":
-    # ✅ Habilitar cola para manejar procesos largos en CPU
-    demo.queue(
-        max_size=20, 
-        default_concurrency_limit=1  # Evitar saturación en CPU
-    )
-    
-    # Lanzar servidor
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=int(os.environ.get("PORT", 7860)),
-        debug=False
-    )
+    demo.queue(max_size=10, default_concurrency_limit=1)
+    demo.launch(server_name="0.0.0.0", server_port=int(os.environ.get("PORT", 7860)), debug=False)
