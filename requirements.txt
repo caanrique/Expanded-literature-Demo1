@@ -1,13 +1,9 @@
-# requirements.txt optimizado para HF Spaces
+
+# requirements.txt FINAL (sin conflicto)
 torch>=2.0.0
 sentence-transformers>=2.2.2
-gradio==4.44.0
-numpy>=1.24.0
-
-# Versión específica de llama-cpp-python que compila mejor en Spaces
 llama-cpp-python==0.2.78
-
-# Herramientas de compilación (a veces necesarias)
+numpy>=1.24.0
 setuptools>=65.0.0
 wheel>=0.40.0
 
