@@ -434,46 +434,44 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm, history):
 def chat_con_personaje(personaje_key, user_input, history):
     if not user_input.strip():
         return history
-    
+
     if isinstance(personaje_key, tuple):
         personaje_key = personaje_key[1]
-    
+
     llm_local = get_llm()
     if llm_local is None:
         return history + [{"role": "assistant", "content": "Error cargando el modelo. Intenta de nuevo."}]
-    
+
     embedder_local = get_embedder()
-    
+
     try:
         fragmentos = buscar_fragmentos(user_input, personaje_key, embedder_local)
         respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, llm_local, history)
-respuesta = limpiar_respuesta(respuesta)
+        respuesta = limpiar_respuesta(respuesta)  # <-- dentro del try
 
-# FALLBACK: si la respuesta está vacía, usar una frase por defecto del personaje
-if not respuesta.strip():
-    if personaje_key == "corazon_delator":
-        respuesta = "El ojo... los latidos... no puedo pensar claro."
-    elif personaje_key == "gato_negro":
-        respuesta = "Pluto... prefiero no hablar de eso."
-    elif personaje_key == "metamorfosis":
-        respuesta = "Mi familia... ojalá pudieran entenderme."
-        
-        # LIMPIAR respuesta JSON
-        respuesta = limpiar_respuesta(respuesta)
-        
+        # Fallback para respuestas vacías
+        if not respuesta.strip():
+            if personaje_key == "corazon_delator":
+                respuesta = "El ojo... los latidos... no puedo pensar claro."
+            elif personaje_key == "gato_negro":
+                respuesta = "Pluto... prefiero no hablar de eso."
+            elif personaje_key == "metamorfosis":
+                respuesta = "Mi familia... ojalá pudieran entenderme."
+
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        
+
         new_history = history + [
             {"role": "user", "content": user_input},
             {"role": "assistant", "content": respuesta}
         ]
         return new_history
+
     except Exception as e:
         print(f"❌ Error en chat: {e}")
         return history + [{"role": "assistant", "content": "Lo siento, ocurrió un error. Intenta de nuevo."}]
-
+        
 # =============================================================================
 # 🎨 INTERFAZ GRADIO (sin theme en Blocks, sin type en Chatbot)
 # =============================================================================
