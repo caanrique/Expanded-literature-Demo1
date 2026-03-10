@@ -439,6 +439,9 @@ def chat_con_personaje(personaje_key, user_input, history):
         fragmentos = buscar_fragmentos(user_input, personaje_key, embedder_local)
         respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, llm_local, history)
         
+        # LIMPIAR respuesta JSON
+        respuesta = limpiar_respuesta(respuesta)
+        
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
