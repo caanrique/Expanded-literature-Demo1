@@ -444,6 +444,16 @@ def chat_con_personaje(personaje_key, user_input, history):
     try:
         fragmentos = buscar_fragmentos(user_input, personaje_key, embedder_local)
         respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, llm_local, history)
+respuesta = limpiar_respuesta(respuesta)
+
+# FALLBACK: si la respuesta está vacía, usar una frase por defecto del personaje
+if not respuesta.strip():
+    if personaje_key == "corazon_delator":
+        respuesta = "El ojo... los latidos... no puedo pensar claro."
+    elif personaje_key == "gato_negro":
+        respuesta = "Pluto... prefiero no hablar de eso."
+    elif personaje_key == "metamorfosis":
+        respuesta = "Mi familia... ojalá pudieran entenderme."
         
         # LIMPIAR respuesta JSON
         respuesta = limpiar_respuesta(respuesta)
