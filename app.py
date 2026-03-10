@@ -375,24 +375,25 @@ def buscar_fragmentos(pregunta, cuento_key, embedder):
         return [CUENTOS[cuento_key]['texto'][:500]]
 
 def generar_respuesta_llm(contexto, pregunta, personaje_key, llm, history):
-    """Genera respuesta usando el LLM con prompt estructurado que incluye el historial"""
+    """Genera respuesta usando el LLM con prompt estructurado y optimizaciones."""
     try:
         prompt_sistema = PROMPTS_PERSONAJES[personaje_key]["descripcion"]
         contexto_unido = "\n".join([f"[Fragmento {i+1}]: {c}" for i, c in enumerate(contexto)])
         
-        # Construimos los mensajes: empezamos con system, luego todo el historial, y finalmente el nuevo user
+        # Limitar historial a los últimos 4 intercambios (8 mensajes) para acelerar
+        history_corto = history[-8:] if len(history) > 8 else history
+        
         messages = [{"role": "system", "content": prompt_sistema}]
         
-        # Agregamos el historial de la conversación (si existe)
-        for msg in history:
-            # history viene como lista de diccionarios con role y content
+        # Agregar historial limitado
+        for msg in history_corto:
             if msg["role"] in ["user", "assistant"]:
                 messages.append(msg)
         
-        # Agregamos el mensaje actual del usuario (con el contexto)
+        # Mensaje actual del usuario con contexto
         messages.append({"role": "user", "content": f"Contexto del cuento:\n{contexto_unido}\n\nPregunta: {pregunta}"})
         
-        # Convertimos los mensajes a formato de texto con tokens especiales
+        # Convertir a formato de texto
         prompt = ""
         for msg in messages:
             if msg["role"] == "system":
@@ -403,17 +404,22 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm, history):
                 prompt += f"<|im_start|>assistant\n{msg['content']}<|im_end|>\n"
         prompt += "<|im_start|>assistant\n"
         
-        # Generar respuesta
+        # Parámetros optimizados: menos tokens, temperatura más baja, stops mejorados
         output = llm(
             prompt,
-            max_tokens=200,
-            temperature=0.7,  # Bajamos la temperatura para reducir alucinaciones
+            max_tokens=150,           # Reducido para respuestas más cortas
+            temperature=0.7,           # Un poco más bajo para menos divagación
             top_p=0.9,
             repeat_penalty=1.18,
-            stop=["<|im_end|>", "<|endoftext|>"],
+            stop=["<|im_end|>", "<|endoftext|>", "\n\n", "["],  # Añadido "[" para cortar JSON
             stream=False
         )
         respuesta = output["choices"][0]["text"].strip()
+        
+        # Limpieza adicional por si acaso
+        if respuesta.startswith("R:"):
+            respuesta = respuesta[2:].strip().strip('"')
+        
         return respuesta
     except Exception as e:
         print(f"❌ Error en generación: {e}")
