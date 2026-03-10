@@ -6,6 +6,7 @@ from sentence_transformers import SentenceTransformer, util
 from llama_cpp import Llama
 import gradio as gr
 import re  # Asegúrate de tenerlo al inicio con los otros imports
+import random 
 
 def limpiar_respuesta(respuesta):
     """Elimina estructuras JSON que a veces genera el modelo."""
@@ -435,6 +436,7 @@ def chat_con_personaje(personaje_key, user_input, history):
     if not user_input.strip():
         return history
 
+    # Normalizar personaje_key (Gradio a veces lo envía como tupla)
     if isinstance(personaje_key, tuple):
         personaje_key = personaje_key[1]
 
@@ -445,23 +447,50 @@ def chat_con_personaje(personaje_key, user_input, history):
     embedder_local = get_embedder()
 
     try:
+        # 1. Buscar fragmentos relevantes del cuento
         fragmentos = buscar_fragmentos(user_input, personaje_key, embedder_local)
+
+        # 2. Generar respuesta con el LLM
         respuesta = generar_respuesta_llm(fragmentos, user_input, personaje_key, llm_local, history)
-        respuesta = limpiar_respuesta(respuesta)  # <-- dentro del try
 
-        # Fallback para respuestas vacías
+        # 3. Limpiar posibles respuestas con formato JSON
+        respuesta = limpiar_respuesta(respuesta)
+
+        # 4. FALLBACK MEJORADO: si la respuesta queda vacía, usar frases variadas según el personaje
         if not respuesta.strip():
-            if personaje_key == "corazon_delator":
-                respuesta = "El ojo... los latidos... no puedo pensar claro."
-            elif personaje_key == "gato_negro":
-                respuesta = "Pluto... prefiero no hablar de eso."
-            elif personaje_key == "metamorfosis":
-                respuesta = "Mi familia... ojalá pudieran entenderme."
+            fallbacks = {
+                "corazon_delator": [
+                    "El ojo... no puedo dejar de pensar en ese ojo.",
+                    "Los latidos... no se detienen nunca.",
+                    "La policía... creyeron que estaba cuerdo.",
+                    "El viejo... su ojo azul pálido...",
+                    "¿Tú también escuchas los latidos?"
+                ],
+                "gato_negro": [
+                    "Pluto... no debí hacerlo.",
+                    "El alcohol... me volvió otro.",
+                    "La pared... esa figura de gato...",
+                    "Mi casa se quemó. Y el gato apareció.",
+                    "No sé por qué lo hice. El alcohol, supongo."
+                ],
+                "metamorfosis": [
+                    "Mi trabajo... voy a perderlo.",
+                    "Mi hermana Grete... aún me trae comida.",
+                    "Mi padre... me tiene miedo.",
+                    "Este cuerpo... no puedo controlarlo.",
+                    "Solo quiero volver a ser yo."
+                ]
+            }
+            # Elegir una frase aleatoria del personaje correspondiente
+            opciones = fallbacks.get(personaje_key, fallbacks["corazon_delator"])
+            respuesta = random.choice(opciones)
 
+        # 5. Liberar memoria (opcional, pero recomendado)
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
+        # 6. Actualizar historial con el nuevo intercambio
         new_history = history + [
             {"role": "user", "content": user_input},
             {"role": "assistant", "content": respuesta}
@@ -470,6 +499,7 @@ def chat_con_personaje(personaje_key, user_input, history):
 
     except Exception as e:
         print(f"❌ Error en chat: {e}")
+        # En caso de error, devolvemos un mensaje amigable sin romper el historial
         return history + [{"role": "assistant", "content": "Lo siento, ocurrió un error. Intenta de nuevo."}]
         
 # =============================================================================
