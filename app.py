@@ -403,7 +403,7 @@ def generar_respuesta_llm(contexto, pregunta, personaje_key, llm, history):
         output = llm(
             prompt,
             max_tokens=150,
-            temperature=0.8,  # Un poco más bajo para menos divagación
+            temperature=0.82,  # Un poco más bajo para menos divagación
             top_p=0.9,
             repeat_penalty=1.18,
             stop=["<|im_end|>", "<|endoftext|>", "\n\n", "["],
