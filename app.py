@@ -5,6 +5,17 @@ import torch
 from sentence_transformers import SentenceTransformer, util
 from llama_cpp import Llama
 import gradio as gr
+import re  # Asegúrate de tenerlo al inicio con los otros imports
+
+def limpiar_respuesta(respuesta):
+    """Elimina estructuras JSON que a veces genera el modelo."""
+    # Patrón para [{'text': '...', 'type': 'text'}]
+    match = re.search(r"\[\{'text': '(.*?)', 'type': 'text'\}\]", respuesta)
+    if match:
+        return match.group(1)
+    # Si no hay JSON, devolvemos la respuesta tal cual
+    return respuesta
+
 
 # Activar descarga rápida
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
