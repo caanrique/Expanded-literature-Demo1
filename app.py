@@ -5,7 +5,7 @@ import torch
 from sentence_transformers import SentenceTransformer, util
 from llama_cpp import Llama
 import gradio as gr
-import re  # Asegúrate de tenerlo al inicio con los otros imports
+import re  
 import random 
 
 def limpiar_respuesta(respuesta):
