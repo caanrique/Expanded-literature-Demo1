@@ -1,6 +1,40 @@
-cache_cuentos/
+# Python
 __pycache__/
-*.pyc
-*.log
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Proyecto específico
+cache_cuentos/
+cache_embedder/
+cache_llm/
+*.pkl
+*.gguf
+*.bin
+
+# Hugging Face
+.huggingface/
+.hf_home/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
-.ipynb_checkpoints/
+Thumbs.db
+
+# Archivos de entorno
+.env
+*.env
+
+# Logs
+*.log
